@@ -7,7 +7,7 @@ MVCoffee
 Copyright 2014, Kirk Bowers
 MIT License
 
-Version 0.3.1
+Version 1.0.0
  */
 
 (function() {
@@ -97,8 +97,8 @@ Version 0.3.1
       this.active = [];
       this._flash = {};
       this._oldFlash = {};
-      this.data = {};
-      this.dataId = "server_json";
+      this.session = {};
+      this.dataId = "mvcoffee_json";
       this.modelStore = new MVCoffee.ModelStore;
       this.onfocusId = null;
       for (id in contrs) {
@@ -147,12 +147,19 @@ Version 0.3.1
     };
 
     ControllerManager.prototype.loadData = function(data) {
-      delete this.data.redirect;
-      delete this.data.errors;
-      delete this.data.flash;
-      this.data = this.modelStore.load(data, this.data);
-      if (this.data.flash != null) {
-        return this.setFlash(this.data.flash);
+      var key, value, _ref, _results;
+      this.modelStore.load(data);
+      if (data.flash != null) {
+        this.setFlash(data.flash);
+      }
+      if (data.session != null) {
+        _ref = data.session;
+        _results = [];
+        for (key in _ref) {
+          value = _ref[key];
+          _results.push(this.session[key] = value);
+        }
+        return _results;
       }
     };
 
@@ -187,6 +194,11 @@ Version 0.3.1
       if (newActive.length) {
         this.active = newActive;
         this.broadcast("start");
+        window.onfocus = (function(_this) {
+          return function() {
+            return _this.broadcast("resume");
+          };
+        })(this);
         window.onblur = (function(_this) {
           return function() {
             return _this.broadcast("pause");
@@ -239,7 +251,7 @@ Version 0.3.1
     Controller.prototype.resume = function() {
       if ((this.refresh != null) && !this.isActive) {
         this.isActive = true;
-        this.refresh("resume");
+        this.refresh();
         return this.startTimer();
       }
     };
@@ -402,6 +414,8 @@ Version 0.3.1
   })();
 
   MVCoffee.ModelStore = (function() {
+    ModelStore.prototype.MIN_DATA_FORMAT_VERSION = "1.0.0";
+
     function ModelStore(models) {
       var classdef, name;
       if (models == null) {
@@ -424,67 +438,68 @@ Version 0.3.1
       return this.store[name] = {};
     };
 
-    ModelStore.prototype.load = function(data, result) {
-      var key, model, modelId, modelObj, obj, objName, value, _i, _j, _len, _len1, _ref, _ref1, _ref2, _ref3;
-      if (result == null) {
-        result = {};
+    ModelStore.prototype.load = function(object) {
+      var commands, foreignKeys, model, modelId, modelName, modelObj, record, toBeRemoved, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2, _results;
+      if ((object.version == null) || object.version < this.MIN_DATA_FORMAT_VERSION) {
+        throw "MVCoffee.DataStore requires minimum data format " + this.MIN_DATA_FORMAT_VERSION;
       }
-      for (key in data) {
-        value = data[key];
-        if (key === "models") {
-          result.models || (result.models = {});
-          for (objName in value) {
-            obj = value[objName];
-            if (this.modelDefs[objName] != null) {
-              if (Array.isArray(obj)) {
-                result.models[objName] = [];
-                for (_i = 0, _len = obj.length; _i < _len; _i++) {
-                  modelObj = obj[_i];
-                  model = new this.modelDefs[objName](modelObj);
-                  result.models[objName].push(model);
-                  this.store[objName][model.id] = model;
-                }
-              } else {
-                model = new this.modelDefs[objName](obj);
-                this.store[objName][obj.id] = model;
-                result.models[objName] = model;
+      _ref = object.models;
+      _results = [];
+      for (modelName in _ref) {
+        commands = _ref[modelName];
+        if (this.modelDefs[modelName] != null) {
+          if (commands.replace_on != null) {
+            if (Array.isArray(commands.replace_on)) {
+              toBeRemoved = [];
+              _ref1 = commands.replace_on;
+              for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+                foreignKeys = _ref1[_i];
+                toBeRemoved = toBeRemoved.concat(this.where(modelName, foreignKeys));
               }
             } else {
-              result.models[objName] = obj;
+              toBeRemoved = this.where(modelName, commands.replace_on);
+            }
+            for (_j = 0, _len1 = toBeRemoved.length; _j < _len1; _j++) {
+              record = toBeRemoved[_j];
+              delete this.store[modelName][record.id];
             }
           }
-        } else if (key === "deletes") {
-          result.deletes || (result.deletes = {});
-          for (objName in value) {
-            obj = value[objName];
-            if (this.modelDefs[objName] != null) {
-              if (Array.isArray(obj)) {
-                for (_j = 0, _len1 = obj.length; _j < _len1; _j++) {
-                  modelId = obj[_j];
-                  delete this.store[objName][modelId];
-                  if ((_ref = result.models) != null) {
-                    if ((_ref1 = _ref[objName]) != null) {
-                      delete _ref1[modelId];
-                    }
-                  }
-                }
-              } else {
-                delete this.store[objName][obj];
-                if ((_ref2 = result.models) != null) {
-                  if ((_ref3 = _ref2[objName]) != null) {
-                    delete _ref3[obj];
-                  }
-                }
+          if (commands.data != null) {
+            if (Array.isArray(commands.data)) {
+              _ref2 = commands.data;
+              for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+                modelObj = _ref2[_k];
+                model = new this.modelDefs[modelName](modelObj);
+                this.store[modelName][model.id] = model;
               }
             } else {
-              console.log("!!! Warning, trying to delete from unknown model " + objName + " !!!");
+              model = new this.modelDefs[modelName](commands.data);
+              this.store[modelName][model.id] = model;
             }
+          }
+          if (commands["delete"] != null) {
+            if (Array.isArray(commands["delete"])) {
+              _results.push((function() {
+                var _l, _len3, _ref3, _results1;
+                _ref3 = commands["delete"];
+                _results1 = [];
+                for (_l = 0, _len3 = _ref3.length; _l < _len3; _l++) {
+                  modelId = _ref3[_l];
+                  _results1.push(delete this.store[modelName][modelId]);
+                }
+                return _results1;
+              }).call(this));
+            } else {
+              _results.push(delete this.store[modelName][commands["delete"]]);
+            }
+          } else {
+            _results.push(void 0);
           }
         } else {
-          result[key] = value;
+          _results.push(void 0);
         }
       }
-      return result;
+      return _results;
     };
 
     ModelStore.prototype.find = function(model, id) {

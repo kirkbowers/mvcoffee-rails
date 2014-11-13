@@ -1,8 +1,6 @@
 require 'mvcoffee/rails/engine'
 require "mvcoffee/rails/version"
 
-puts '!!!!!! mvcoffee-rails uber include file !!!!!!'
-
 
 module MVCoffee
 
@@ -21,9 +19,10 @@ module MVCoffee
     class MVCoffee
       def initialize
         @json = {
+          version: Mvcoffee::Rails::VERSION,
           flash: {},
           models: {},
-          deletes: {}
+          session: {}
         }
       end
 
@@ -51,33 +50,50 @@ module MVCoffee
         end
       end
     
-      def set_models(opts)
-        @json[:models].merge!(opts)
+      def set_model_data(model_name, data)
+        obj = @json[:models][model_name] || {}
+        obj[:data] = data
+        # Reassign it back.  If we got a new hash, it isn't a reference from the @json
+        # object, so it won't be associated unless we make it so manually.
+        # If we did get a hash back on the first line, it is a reference, but since we
+        # merged into it, it is safe to reassign it back.
+        @json[:models][model_name] = obj
       end
     
-      def set_deletes(model_name, data)
-        @json[:deletes][model_name] ||= []
+      def set_model_replace_on(model_name, data, foreign_keys)
+        obj = @json[:models][model_name] || {}
+        obj[:data] = data
+        
+        obj[:replace_on] = foreign_keys
+        
+        # Reassign it back.  If we got a new hash, it isn't a reference from the @json
+        # object, so it won't be associated unless we make it so manually.
+        # If we did get a hash back on the first line, it is a reference, but since we
+        # merged into it, it is safe to reassign it back.
+        @json[:models][model_name] = obj
+      end
+    
+      def set_model_delete(model_name, data)
+        obj = @json[:models][model_name] || {}
+
+        ojb[:delete] ||= []
         if data.respond_to? :to_a
-          @json[:deletes][model_name].concat data.to_a
+          obj += data.to_a
         else
-          @json[:deletes][model_name] << data
+          obj << data
         end
+        
+        @json[:models][model_name] = obj        
       end      
     
-      def set(opts)
-        @json.merge! opts
+      def set_session(opts)
+        @json[:session].merge! opts
       end
       
-      def []=(key, value)
-        @json[key] = value
-      end
-        
       def to_json
         @json.to_json
       end
 
-      alias :set_model :set_models
-      alias :set_delete :set_deletes
     end
   end
 end
