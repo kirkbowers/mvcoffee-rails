@@ -12,8 +12,8 @@ Version 1.0.0
 
 (function() {
   var MVCoffee,
-    __slice = [].slice,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __slice = [].slice,
     __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
   if (typeof exports !== "undefined" && exports !== null) {
@@ -28,6 +28,22 @@ Version 1.0.0
       return Object.prototype.toString.call(arg) === '[object Array]';
     };
   }
+
+  this.link_to = function(label, link, opts) {
+    var result;
+    if (opts == null) {
+      opts = {};
+    }
+    result = '<a href="' + link + '"';
+    if (opts.id != null) {
+      result += ' id="' + opts.id + '"';
+    }
+    if (opts["class"] != null) {
+      result += ' class="' + opts["class"] + '"';
+    }
+    result += '>' + label + '</a>';
+    return result;
+  };
 
   MVCoffee.Pluralizer = (function() {
     function Pluralizer() {}
@@ -93,6 +109,11 @@ Version 1.0.0
       if (contrs == null) {
         contrs = {};
       }
+      this.processServerData = __bind(this.processServerData, this);
+      this.getErrors = __bind(this.getErrors, this);
+      this.getSession = __bind(this.getSession, this);
+      this.getFlash = __bind(this.getFlash, this);
+      this.setFlash = __bind(this.setFlash, this);
       this.controllers = {};
       this.active = [];
       this._flash = {};
@@ -100,6 +121,7 @@ Version 1.0.0
       this.session = {};
       this.dataId = "mvcoffee_json";
       this.modelStore = new MVCoffee.ModelStore;
+      console.log("Model store = " + this.modelStore);
       this.onfocusId = null;
       for (id in contrs) {
         contr = contrs[id];
@@ -146,20 +168,44 @@ Version 1.0.0
       return (_ref = this._flash[key]) != null ? _ref : this._oldFlash[key];
     };
 
-    ControllerManager.prototype.loadData = function(data) {
-      var key, value, _ref, _results;
-      this.modelStore.load(data);
-      if (data.flash != null) {
-        this.setFlash(data.flash);
+    ControllerManager.prototype.getSession = function(key) {
+      return this.session[key];
+    };
+
+    ControllerManager.prototype.getErrors = function() {
+      return this.errors;
+    };
+
+    ControllerManager.prototype.processServerData = function(data, callback_message) {
+      var error_callback_message, key, value, _ref;
+      if (callback_message == null) {
+        callback_message = "";
       }
-      if (data.session != null) {
-        _ref = data.session;
-        _results = [];
-        for (key in _ref) {
-          value = _ref[key];
-          _results.push(this.session[key] = value);
+      if (data) {
+        console.log("Got data from server: " + JSON.stringify(data));
+        console.log("Model store = " + this.modelStore);
+        this.modelStore.load(data);
+        if (data.flash != null) {
+          this.setFlash(data.flash);
         }
-        return _results;
+        if (data.session != null) {
+          _ref = data.session;
+          for (key in _ref) {
+            value = _ref[key];
+            this.session[key] = value;
+          }
+        }
+        this.errors = data.errors;
+        if (data.redirect != null) {
+          return Turbolinks.visit(data.redirect);
+        } else if (callback_message) {
+          if (this.errors) {
+            error_callback_message = "" + callback_message + "_errors";
+            return this.broadcast(error_callback_message, this.errors);
+          } else {
+            return this.broadcast(callback_message);
+          }
+        }
       }
     };
 
@@ -168,11 +214,11 @@ Version 1.0.0
       this._oldFlash = this._flash;
       this._flash = {};
       json = $("#" + this.dataId).html();
-      parsed = {};
+      parsed = null;
       if (json) {
         parsed = $.parseJSON(json);
       }
-      this.loadData(parsed);
+      this.processServerData(parsed);
       newActive = [];
       _ref = this.controllers;
       for (id in _ref) {
@@ -209,7 +255,6 @@ Version 1.0.0
           return function() {
             var now;
             now = new Date().getTime();
-            $("#onfocus_timer").html(now - _this.lastFired);
             if (now - _this.lastFired > 2000) {
               _this.broadcast("pause");
               _this.broadcast("resume");
@@ -233,6 +278,10 @@ Version 1.0.0
       this.selector = "#" + id;
       this.timerId = null;
       this.isActive = false;
+      this.processServerData = this.manager.processServerData;
+      this.getFlash = this.manager.getFlash;
+      this.getSession = this.manager.getSession;
+      this.getErrors = this.manager.getErrors;
     }
 
     Controller.prototype.start = function() {
@@ -243,12 +292,14 @@ Version 1.0.0
         this.authenticity_token = token.attr("content");
       }
       this.onStart();
+      this.render();
       if (this.refresh != null) {
         return this.startTimer();
       }
     };
 
     Controller.prototype.resume = function() {
+      this.onResume();
       if ((this.refresh != null) && !this.isActive) {
         this.isActive = true;
         this.refresh();
@@ -257,6 +308,7 @@ Version 1.0.0
     };
 
     Controller.prototype.pause = function() {
+      this.onPause();
       if (this.refresh != null) {
         this.isActive = false;
         return this.stopTimer();
@@ -336,7 +388,7 @@ Version 1.0.0
                   url: element.href,
                   type: 'DELETE',
                   success: function(data) {
-                    return _this.processServerData(data, element);
+                    return _this.manager.processServerData(data, element.id);
                   },
                   dataType: "json"
                 });
@@ -348,33 +400,22 @@ Version 1.0.0
       }
     };
 
+    Controller.prototype.get = function(url, callback_message) {
+      return $.get(url, (function(_this) {
+        return function(data) {
+          _this.manager.processServerData(data);
+          return _this.manager.broadcast("render");
+        };
+      })(this), 'json');
+    };
+
     Controller.prototype.turbolinksPost = function(element) {
       jQuery.post(element.action, $(element).serialize(), (function(_this) {
         return function(data) {
-          return _this.processServerData(data, element);
+          return _this.processServerData(data, element.id);
         };
       })(this), 'json');
       return false;
-    };
-
-    Controller.prototype.processServerData = function(data, element) {
-      var method;
-      if (data.errors != null) {
-        method = "" + element.id + "_errors";
-        if (this[method] != null) {
-          return this[method](data.errors);
-        }
-      } else {
-        this.manager.loadData(data);
-        if (data.redirect != null) {
-          return Turbolinks.visit(data.redirect);
-        } else {
-          method = element.id;
-          if (this[method] != null) {
-            return this[method](data);
-          }
-        }
-      }
     };
 
     Controller.prototype.refreshInterval = 60000;
@@ -383,7 +424,13 @@ Version 1.0.0
 
     Controller.prototype.onStart = function() {};
 
+    Controller.prototype.onPause = function() {};
+
+    Controller.prototype.onResume = function() {};
+
     Controller.prototype.onStop = function() {};
+
+    Controller.prototype.render = function() {};
 
     Controller.prototype.toString = function() {
       return this.id;
@@ -440,7 +487,7 @@ Version 1.0.0
 
     ModelStore.prototype.load = function(object) {
       var commands, foreignKeys, model, modelId, modelName, modelObj, record, toBeRemoved, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2, _results;
-      if ((object.version == null) || object.version < this.MIN_DATA_FORMAT_VERSION) {
+      if ((object.mvcoffee_version == null) || object.mvcoffee_version < this.MIN_DATA_FORMAT_VERSION) {
         throw "MVCoffee.DataStore requires minimum data format " + this.MIN_DATA_FORMAT_VERSION;
       }
       _ref = object.models;

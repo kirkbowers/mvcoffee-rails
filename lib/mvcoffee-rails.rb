@@ -19,7 +19,7 @@ module MVCoffee
     class MVCoffee
       def initialize
         @json = {
-          version: Mvcoffee::Rails::VERSION,
+          mvcoffee_version: Mvcoffee::Rails::VERSION,
           flash: {},
           models: {},
           session: {}
