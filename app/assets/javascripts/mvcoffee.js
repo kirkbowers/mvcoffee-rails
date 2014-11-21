@@ -103,33 +103,34 @@ Version 1.0.0
 
   })();
 
-  MVCoffee.ControllerManager = (function() {
-    function ControllerManager(contrs) {
-      var contr, id;
-      if (contrs == null) {
-        contrs = {};
-      }
+  MVCoffee.Runtime = (function() {
+    function Runtime() {
       this.processServerData = __bind(this.processServerData, this);
       this.getErrors = __bind(this.getErrors, this);
       this.getSession = __bind(this.getSession, this);
       this.getFlash = __bind(this.getFlash, this);
       this.setFlash = __bind(this.setFlash, this);
       this.controllers = {};
+      this.modelStore = new MVCoffee.ModelStore;
       this.active = [];
       this._flash = {};
       this._oldFlash = {};
       this.session = {};
       this.dataId = "mvcoffee_json";
-      this.modelStore = new MVCoffee.ModelStore;
-      console.log("Model store = " + this.modelStore);
       this.onfocusId = null;
-      for (id in contrs) {
-        contr = contrs[id];
-        this.addController(new contr(id, this), id);
-      }
     }
 
-    ControllerManager.prototype.addController = function(contr, id) {
+    Runtime.prototype.register_controllers = function(contrs) {
+      var contr, id, _results;
+      _results = [];
+      for (id in contrs) {
+        contr = contrs[id];
+        _results.push(this._addController(new contr(id, this), id));
+      }
+      return _results;
+    };
+
+    Runtime.prototype._addController = function(contr, id) {
       if (id != null) {
         return this.controllers[id] = contr;
       } else {
@@ -137,7 +138,11 @@ Version 1.0.0
       }
     };
 
-    ControllerManager.prototype.broadcast = function() {
+    Runtime.prototype.register_models = function(models) {
+      return this.modelStore.register_models(models);
+    };
+
+    Runtime.prototype.broadcast = function() {
       var args, controller, message, _i, _len, _ref, _results;
       message = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
       _ref = this.active;
@@ -153,7 +158,7 @@ Version 1.0.0
       return _results;
     };
 
-    ControllerManager.prototype.setFlash = function(opts) {
+    Runtime.prototype.setFlash = function(opts) {
       var key, opt, _results;
       _results = [];
       for (key in opts) {
@@ -163,20 +168,20 @@ Version 1.0.0
       return _results;
     };
 
-    ControllerManager.prototype.getFlash = function(key) {
+    Runtime.prototype.getFlash = function(key) {
       var _ref;
       return (_ref = this._flash[key]) != null ? _ref : this._oldFlash[key];
     };
 
-    ControllerManager.prototype.getSession = function(key) {
+    Runtime.prototype.getSession = function(key) {
       return this.session[key];
     };
 
-    ControllerManager.prototype.getErrors = function() {
+    Runtime.prototype.getErrors = function() {
       return this.errors;
     };
 
-    ControllerManager.prototype.processServerData = function(data, callback_message) {
+    Runtime.prototype.processServerData = function(data, callback_message) {
       var error_callback_message, key, value, _ref;
       if (callback_message == null) {
         callback_message = "";
@@ -209,7 +214,7 @@ Version 1.0.0
       }
     };
 
-    ControllerManager.prototype.go = function() {
+    Runtime.prototype.go = function() {
       var contr, id, json, newActive, parsed, _ref;
       this._oldFlash = this._flash;
       this._flash = {};
@@ -267,21 +272,32 @@ Version 1.0.0
       }
     };
 
-    return ControllerManager;
+    Runtime.prototype.run = function() {
+      var self;
+      self = this;
+      $(function() {
+        return self.go();
+      });
+      return $(document).on('pagebeforeshow', function() {
+        return self.go();
+      });
+    };
+
+    return Runtime;
 
   })();
 
   MVCoffee.Controller = (function() {
-    function Controller(id, manager) {
+    function Controller(id, runtime) {
       this.id = id;
-      this.manager = manager;
+      this.runtime = runtime;
       this.selector = "#" + id;
       this.timerId = null;
       this.isActive = false;
-      this.processServerData = this.manager.processServerData;
-      this.getFlash = this.manager.getFlash;
-      this.getSession = this.manager.getSession;
-      this.getErrors = this.manager.getErrors;
+      this.processServerData = this.runtime.processServerData;
+      this.getFlash = this.runtime.getFlash;
+      this.getSession = this.runtime.getSession;
+      this.getErrors = this.runtime.getErrors;
     }
 
     Controller.prototype.start = function() {
@@ -388,7 +404,7 @@ Version 1.0.0
                   url: element.href,
                   type: 'DELETE',
                   success: function(data) {
-                    return _this.manager.processServerData(data, element.id);
+                    return _this.runtime.processServerData(data, element.id);
                   },
                   dataType: "json"
                 });
@@ -403,8 +419,8 @@ Version 1.0.0
     Controller.prototype.get = function(url, callback_message) {
       return $.get(url, (function(_this) {
         return function(data) {
-          _this.manager.processServerData(data);
-          return _this.manager.broadcast("render");
+          _this.runtime.processServerData(data);
+          return _this.runtime.broadcast("render");
         };
       })(this), 'json');
     };
@@ -464,19 +480,28 @@ Version 1.0.0
     ModelStore.prototype.MIN_DATA_FORMAT_VERSION = "1.0.0";
 
     function ModelStore(models) {
-      var classdef, name;
       if (models == null) {
         models = {};
       }
       this.modelDefs = {};
       this.store = {};
-      for (name in models) {
-        classdef = models[name];
-        this.addModel(name, classdef);
-      }
+      this.register_models(models);
     }
 
-    ModelStore.prototype.addModel = function(name, classdef) {
+    ModelStore.prototype.register_models = function(models) {
+      var classdef, name, _results;
+      if (models == null) {
+        models = {};
+      }
+      _results = [];
+      for (name in models) {
+        classdef = models[name];
+        _results.push(this._addModel(name, classdef));
+      }
+      return _results;
+    };
+
+    ModelStore.prototype._addModel = function(name, classdef) {
       var _base, _base1;
       this.modelDefs[name] = classdef;
       (_base = classdef.prototype).modelName || (_base.modelName = name);
