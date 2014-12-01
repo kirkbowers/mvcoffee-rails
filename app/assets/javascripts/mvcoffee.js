@@ -549,7 +549,7 @@ Version 1.0.0
             }
             for (_j = 0, _len1 = toBeRemoved.length; _j < _len1; _j++) {
               record = toBeRemoved[_j];
-              delete this.store[modelName][record.id];
+              this._delete_with_cascade(modelName, record.id);
             }
           }
           if (commands.data != null) {
@@ -563,12 +563,12 @@ Version 1.0.0
                 _results1 = [];
                 for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
                   modelId = _ref2[_k];
-                  _results1.push(delete this.store[modelName][modelId]);
+                  _results1.push(this._delete_with_cascade(modelName, modelId));
                 }
                 return _results1;
               }).call(this));
             } else {
-              _results.push(delete this.store[modelName][commands["delete"]]);
+              _results.push(this._delete_with_cascade(modelName, commands["delete"]));
             }
           } else {
             _results.push(void 0);
@@ -636,6 +636,20 @@ Version 1.0.0
       return result;
     };
 
+    ModelStore.prototype["delete"] = function(model, id) {
+      return delete this.store[model][id];
+    };
+
+    ModelStore.prototype._delete_with_cascade = function(model, id) {
+      var record;
+      record = this.store[model][id];
+      if ((record["delete"] != null) && record["delete"] instanceof Function) {
+        return record["delete"]();
+      } else {
+        return delete this.store[model][id];
+      }
+    };
+
     return ModelStore;
 
   })();
@@ -651,6 +665,8 @@ Version 1.0.0
     Model.prototype.modelName = null;
 
     Model.prototype.fields = [];
+
+    Model.prototype._associations_has_many = [];
 
     Model.prototype.errors = [];
 
@@ -707,6 +723,24 @@ Version 1.0.0
 
     Model.find = function(id) {
       return this.prototype.modelStore.find(this.prototype.modelName, id);
+    };
+
+    Model.prototype["delete"] = function() {
+      var assoc, child, children, _i, _j, _len, _len1, _ref;
+      _ref = this._associations_has_many;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        assoc = _ref[_i];
+        children = this[assoc]();
+        for (_j = 0, _len1 = children.length; _j < _len1; _j++) {
+          child = children[_j];
+          child["delete"]();
+        }
+      }
+      return this.modelStore["delete"](this.modelName, this.id);
+    };
+
+    Model.prototype.destroy = function() {
+      return this["delete"]();
     };
 
     Model.findFieldIndex = function(field) {
@@ -787,6 +821,10 @@ Version 1.0.0
         options = {};
       }
       methodName = options.as || MVCoffee.Pluralizer.pluralize(name);
+      if (!this.prototype.hasOwnProperty("_associations_has_many")) {
+        this.prototype._associations_has_many = [];
+      }
+      this.prototype._associations_has_many.push(methodName);
       self = this;
       return this.prototype[methodName] = function() {
         var constraints, foreignKey, modelStore, result;
