@@ -417,7 +417,7 @@ Version 1.0.0
     };
 
     Controller.prototype.get = function(url, callback_message) {
-      return $.get(url, (function(_this) {
+      return $.get(url, this.runtime.session, (function(_this) {
         return function(data) {
           _this.runtime.processServerData(data);
           return _this.runtime.broadcast("render");
@@ -510,8 +510,24 @@ Version 1.0.0
       return this.store[name] = {};
     };
 
+    ModelStore.prototype.load_model_data = function(modelName, data) {
+      var model, modelObj, _i, _len, _results;
+      if (Array.isArray(data)) {
+        _results = [];
+        for (_i = 0, _len = data.length; _i < _len; _i++) {
+          modelObj = data[_i];
+          model = new this.modelDefs[modelName](modelObj);
+          _results.push(this.store[modelName][model.id] = model);
+        }
+        return _results;
+      } else {
+        model = new this.modelDefs[modelName](data);
+        return this.store[modelName][model.id] = model;
+      }
+    };
+
     ModelStore.prototype.load = function(object) {
-      var commands, foreignKeys, model, modelId, modelName, modelObj, record, toBeRemoved, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2, _results;
+      var commands, foreignKeys, modelId, modelName, record, toBeRemoved, _i, _j, _len, _len1, _ref, _ref1, _results;
       if ((object.mvcoffee_version == null) || object.mvcoffee_version < this.MIN_DATA_FORMAT_VERSION) {
         throw "MVCoffee.DataStore requires minimum data format " + this.MIN_DATA_FORMAT_VERSION;
       }
@@ -537,26 +553,16 @@ Version 1.0.0
             }
           }
           if (commands.data != null) {
-            if (Array.isArray(commands.data)) {
-              _ref2 = commands.data;
-              for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
-                modelObj = _ref2[_k];
-                model = new this.modelDefs[modelName](modelObj);
-                this.store[modelName][model.id] = model;
-              }
-            } else {
-              model = new this.modelDefs[modelName](commands.data);
-              this.store[modelName][model.id] = model;
-            }
+            this.load_model_data(modelName, commands.data);
           }
           if (commands["delete"] != null) {
             if (Array.isArray(commands["delete"])) {
               _results.push((function() {
-                var _l, _len3, _ref3, _results1;
-                _ref3 = commands["delete"];
+                var _k, _len2, _ref2, _results1;
+                _ref2 = commands["delete"];
                 _results1 = [];
-                for (_l = 0, _len3 = _ref3.length; _l < _len3; _l++) {
-                  modelId = _ref3[_l];
+                for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+                  modelId = _ref2[_k];
                   _results1.push(delete this.store[modelName][modelId]);
                 }
                 return _results1;
@@ -827,11 +833,16 @@ Version 1.0.0
     };
 
     Model.prototype.populate = function(obj) {
-      var field, selector, _i, _len, _ref;
+      var field, selector, value, _i, _len, _ref;
       if (obj != null) {
         for (field in obj) {
+          value = obj[field];
           if (obj.hasOwnProperty(field)) {
-            this[field] = obj[field];
+            if (value instanceof Object || value instanceof Array) {
+              this.modelStore.load_model_data(field, value);
+            } else {
+              this[field] = value;
+            }
           }
         }
       } else {

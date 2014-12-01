@@ -8,9 +8,9 @@ module MVCoffee
     !request.xhr? and !request.headers["HTTP_X_XHR_REFERER"]
   end
     
-  def render_mvcoffee(data)
+  def render_mvcoffee(data, opts = {})
     respond_to do |format|
-      format.html
+      format.html { render opts }
       format.json { render json: data.to_json }
     end  
   end
@@ -52,7 +52,26 @@ module MVCoffee
     
       def set_model_data(model_name, data)
         obj = @json[:models][model_name] || {}
-        obj[:data] = data
+        
+        result = nil
+        
+        if data.respond_to? :collect
+          if data.length > 0
+            if data[0].respond_to? :to_hash
+              result = data.collect {|a| a.to_hash }
+            else
+              result = data.collect {|a| a.to_json }
+            end
+          else
+            result = []
+          end
+        elsif data.respond_to? :to_hash
+          result = data.to_hash
+        else
+          result = data.to_json
+        end
+        
+        obj[:data] = result
         # Reassign it back.  If we got a new hash, it isn't a reference from the @json
         # object, so it won't be associated unless we make it so manually.
         # If we did get a hash back on the first line, it is a reference, but since we
@@ -61,8 +80,7 @@ module MVCoffee
       end
     
       def set_model_replace_on(model_name, data, foreign_keys)
-        obj = @json[:models][model_name] || {}
-        obj[:data] = data
+        obj = set_model_data(model_name, data)
         
         obj[:replace_on] = foreign_keys
         
