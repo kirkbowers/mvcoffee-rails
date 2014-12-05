@@ -108,6 +108,7 @@ Version 1.0.0
       this.processServerData = __bind(this.processServerData, this);
       this.getErrors = __bind(this.getErrors, this);
       this.getSession = __bind(this.getSession, this);
+      this.setSession = __bind(this.setSession, this);
       this.getFlash = __bind(this.getFlash, this);
       this.setFlash = __bind(this.setFlash, this);
       this.controllers = {};
@@ -173,6 +174,16 @@ Version 1.0.0
       return (_ref = this._flash[key]) != null ? _ref : this._oldFlash[key];
     };
 
+    Runtime.prototype.setSession = function(opts) {
+      var key, opt, _results;
+      _results = [];
+      for (key in opts) {
+        opt = opts[key];
+        _results.push(this.session[key] = opt);
+      }
+      return _results;
+    };
+
     Runtime.prototype.getSession = function(key) {
       return this.session[key];
     };
@@ -188,7 +199,6 @@ Version 1.0.0
       }
       if (data) {
         console.log("Got data from server: " + JSON.stringify(data));
-        console.log("Model store = " + this.modelStore);
         this.modelStore.load(data);
         if (data.flash != null) {
           this.setFlash(data.flash);
@@ -247,29 +257,47 @@ Version 1.0.0
         this.broadcast("start");
         window.onfocus = (function(_this) {
           return function() {
+            _this._startSafariKludge();
+            console.log("onfocus detected, resuming");
             return _this.broadcast("resume");
           };
         })(this);
         window.onblur = (function(_this) {
           return function() {
+            _this._stopSafariKludge();
+            console.log("onblur detected, pausing");
             return _this.broadcast("pause");
           };
         })(this);
-        this.lastFired = new Date().getTime();
-        return this.onfocusId = setInterval((function(_this) {
-          return function() {
-            var now;
-            now = new Date().getTime();
-            if (now - _this.lastFired > 2000) {
-              _this.broadcast("pause");
-              _this.broadcast("resume");
-            }
-            return _this.lastFired = now;
-          };
-        })(this), 500);
+        return this._startSafariKludge();
       } else {
         return this.active = [];
       }
+    };
+
+    Runtime.prototype._startSafariKludge = function() {
+      this._stopSafariKludge();
+      this.lastFired = new Date().getTime();
+      console.log("safari kludge setting last fired to " + this.lastFired);
+      return this.onfocusId = setInterval((function(_this) {
+        return function() {
+          var now;
+          now = new Date().getTime();
+          if (now - _this.lastFired > 2000) {
+            console.log("safari onfocus kludge fired, now = " + now + ", last = " + _this.lastFired);
+            _this.broadcast("pause");
+            _this.broadcast("resume");
+          }
+          return _this.lastFired = now;
+        };
+      })(this), 500);
+    };
+
+    Runtime.prototype._stopSafariKludge = function() {
+      if (this.onfocusId != null) {
+        clearInterval(this.onfocusId);
+      }
+      return this.onfocusId = null;
     };
 
     Runtime.prototype.run = function() {
@@ -296,8 +324,11 @@ Version 1.0.0
       this.isActive = false;
       this.processServerData = this.runtime.processServerData;
       this.getFlash = this.runtime.getFlash;
+      this.setFlash = this.runtime.setFlash;
       this.getSession = this.runtime.getSession;
+      this.setSession = this.runtime.setSession;
       this.getErrors = this.runtime.getErrors;
+      this.timerCount = 0;
     }
 
     Controller.prototype.start = function() {
@@ -316,6 +347,8 @@ Version 1.0.0
 
     Controller.prototype.resume = function() {
       this.onResume();
+      console.log("resume called on controller " + this.toString());
+      console.log("isActive = " + this.isActive);
       if ((this.refresh != null) && !this.isActive) {
         this.isActive = true;
         this.refresh();
@@ -325,6 +358,7 @@ Version 1.0.0
 
     Controller.prototype.pause = function() {
       this.onPause();
+      console.log("pause called on controller " + this.toString());
       if (this.refresh != null) {
         this.isActive = false;
         return this.stopTimer();
@@ -354,12 +388,8 @@ Version 1.0.0
               return $(element).submit(function() {
                 var confirm, doPost, method, model;
                 doPost = true;
-                confirm = customization.confirm;
-                if (confirm != null) {
-                  doPost = window.confirm(confirm);
-                }
                 model = customization.model;
-                if (doPost && (model != null)) {
+                if (model != null) {
                   model.populate();
                   method = "" + element.id + "_errors";
                   if (self[method] != null) {
@@ -369,8 +399,16 @@ Version 1.0.0
                   }
                   doPost = model.isValid();
                 }
+                confirm = customization.confirm;
+                if (doPost && (confirm != null)) {
+                  if (confirm instanceof Function) {
+                    doPost = confirm();
+                  } else {
+                    doPost = window.confirm(confirm);
+                  }
+                }
                 if (doPost) {
-                  self.turbolinksPost(element);
+                  self.turbolinksSubmit(element);
                 }
                 return false;
               });
@@ -383,7 +421,7 @@ Version 1.0.0
                 });
               } else {
                 return $(element).submit(function() {
-                  self.turbolinksPost(element);
+                  self.turbolinksSubmit(element);
                   return false;
                 });
               }
@@ -417,15 +455,40 @@ Version 1.0.0
     };
 
     Controller.prototype.get = function(url, callback_message) {
+      if (callback_message == null) {
+        callback_message = "render";
+      }
       return $.get(url, this.runtime.session, (function(_this) {
         return function(data) {
-          _this.runtime.processServerData(data);
-          return _this.runtime.broadcast("render");
+          return _this.runtime.processServerData(data, callback_message);
         };
       })(this), 'json');
     };
 
-    Controller.prototype.turbolinksPost = function(element) {
+    Controller.prototype.post = function(url, params, callback_message) {
+      if (params == null) {
+        params = {};
+      }
+      if (callback_message == null) {
+        callback_message = "render";
+      }
+      $.extend(params, {
+        authenticity_token: this.authenticity_token
+      }, this.session);
+      return $.post(url, params, (function(_this) {
+        return function(data) {
+          return _this.runtime.processServerData(data, callback_message);
+        };
+      })(this), 'json');
+    };
+
+    Controller.prototype.turbolinksSubmit = function(submitee) {
+      var element;
+      element = submitee;
+      if (submitee instanceof jQuery) {
+        element = submitee.get(0);
+      }
+      console.log("Submiting " + element.id + " over turbolinks");
       jQuery.post(element.action, $(element).serialize(), (function(_this) {
         return function(data) {
           return _this.processServerData(data, element.id);
@@ -459,14 +522,20 @@ Version 1.0.0
       }
       if ((this.refreshInterval != null) && this.refreshInterval > 0) {
         self = this;
-        return this.timerId = setInterval(function() {
+        this.timerCount += 1;
+        console.log("Starting timer with count of " + this.timerCount);
+        this.timerId = setInterval(function() {
+          console.log("Firing timer with count of " + self.timerCount);
           return self.refresh.call(self);
         }, this.refreshInterval);
+        return console.log("Started timerId " + this.timerId);
       }
     };
 
     Controller.prototype.stopTimer = function() {
+      console.log("Stopping timer");
       if (this.timerId != null) {
+        console.log("clearing the interval with timerId " + this.timerId);
         clearInterval(this.timerId);
       }
       return this.timerId = null;
