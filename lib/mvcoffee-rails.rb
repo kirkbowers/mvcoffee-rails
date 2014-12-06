@@ -10,7 +10,13 @@ module MVCoffee
     
   def render_mvcoffee(data, opts = {})
     respond_to do |format|
-      format.html { render opts }
+      format.html { 
+        if data.redirect
+          redirect_to data.redirect, data.flash.merge(opts)
+        else
+          render opts 
+        end
+      }
       format.json { render json: data.to_json }
     end  
   end

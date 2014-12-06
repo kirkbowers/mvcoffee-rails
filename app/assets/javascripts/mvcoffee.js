@@ -198,7 +198,6 @@ Version 1.0.0
         callback_message = "";
       }
       if (data) {
-        console.log("Got data from server: " + JSON.stringify(data));
         this.modelStore.load(data);
         if (data.flash != null) {
           this.setFlash(data.flash);
@@ -374,15 +373,21 @@ Version 1.0.0
     };
 
     Controller.prototype.turbolinkForms = function(customizations) {
-      var self;
+      var $searchInside, self;
       if (customizations == null) {
         customizations = {};
       }
       if (typeof Turbolinks !== "undefined" && Turbolinks !== null) {
         self = this;
-        jQuery("form").each((function(_this) {
+        if (customizations.scope != null) {
+          $searchInside = jQuery(customizations.scope);
+        } else {
+          $searchInside = jQuery("body");
+        }
+        $searchInside.find("form").each((function(_this) {
           return function(index, element) {
             var $element, customization;
+            console.log("turbolinking " + element.id);
             if (customizations[element.id] != null) {
               customization = customizations[element.id];
               return $(element).submit(function() {
@@ -428,8 +433,9 @@ Version 1.0.0
             }
           };
         })(this));
-        return jQuery("a[data-method='delete']").each((function(_this) {
+        return $searchInside.find("a[data-method='delete']").each((function(_this) {
           return function(index, element) {
+            console.log("Found a delete link! url=" + element.href);
             return jQuery(element).click(function() {
               var confirm, doPost;
               doPost = true;
@@ -577,6 +583,10 @@ Version 1.0.0
       (_base1 = classdef.prototype).modelNamePlural || (_base1.modelNamePlural = MVCoffee.Pluralizer.pluralize(name));
       classdef.prototype.modelStore = this;
       return this.store[name] = {};
+    };
+
+    ModelStore.prototype.knowsAbout = function(name) {
+      return this.store[name] != null;
     };
 
     ModelStore.prototype.load_model_data = function(modelName, data) {
@@ -945,7 +955,7 @@ Version 1.0.0
         for (field in obj) {
           value = obj[field];
           if (obj.hasOwnProperty(field)) {
-            if (value instanceof Object || value instanceof Array) {
+            if ((value instanceof Object || value instanceof Array) && this.modelStore.knowsAbout(field)) {
               this.modelStore.load_model_data(field, value);
             } else {
               this[field] = value;
