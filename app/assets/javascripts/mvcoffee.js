@@ -41,6 +41,9 @@ Version 1.0.0
     if (opts["class"] != null) {
       result += ' class="' + opts["class"] + '"';
     }
+    if (opts.method != null) {
+      result += ' rel="nofollow" data-method="' + opts.method + '"';
+    }
     result += '>' + label + '</a>';
     return result;
   };
@@ -144,17 +147,30 @@ Version 1.0.0
     };
 
     Runtime.prototype.broadcast = function() {
-      var args, controller, message, _i, _len, _ref, _results;
-      message = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
+      var args, controller, i, message, messages, sent, _i, _len, _ref, _results;
+      messages = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
+      if (!Array.isArray(messages)) {
+        messages = [messages];
+      }
       _ref = this.active;
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         controller = _ref[_i];
-        if ((controller[message] != null) && typeof controller[message] === 'function') {
-          _results.push(controller[message].apply(controller, args));
-        } else {
-          _results.push(void 0);
-        }
+        sent = false;
+        i = 0;
+        _results.push((function() {
+          var _results1;
+          _results1 = [];
+          while (!sent && i < messages.length) {
+            message = messages[i];
+            if (message && (controller[message] != null) && typeof controller[message] === 'function') {
+              sent = true;
+              controller[message].apply(controller, args);
+            }
+            _results1.push(i++);
+          }
+          return _results1;
+        })());
       }
       return _results;
     };
@@ -198,6 +214,7 @@ Version 1.0.0
         callback_message = "";
       }
       if (data) {
+        console.log("Got data from server: " + JSON.stringify(data));
         this.modelStore.load(data);
         if (data.flash != null) {
           this.setFlash(data.flash);
@@ -212,12 +229,17 @@ Version 1.0.0
         this.errors = data.errors;
         if (data.redirect != null) {
           return Turbolinks.visit(data.redirect);
-        } else if (callback_message) {
+        } else {
           if (this.errors) {
-            error_callback_message = "" + callback_message + "_errors";
+            if (callback_message) {
+              error_callback_message = ["" + callback_message + "_errors", "errors"];
+            } else {
+              error_callback_message = "errors";
+            }
+            end;
             return this.broadcast(error_callback_message, this.errors);
           } else {
-            return this.broadcast(callback_message);
+            return this.broadcast([callback_message, "render"]);
           }
         }
       }
@@ -318,6 +340,7 @@ Version 1.0.0
     function Controller(id, runtime) {
       this.id = id;
       this.runtime = runtime;
+      this.errors = __bind(this.errors, this);
       this.selector = "#" + id;
       this.timerId = null;
       this.isActive = false;
@@ -433,6 +456,37 @@ Version 1.0.0
             }
           };
         })(this));
+        console.log("Looking for post links");
+        $searchInside.find("a[data-method='post']").each((function(_this) {
+          return function(index, element) {
+            console.log("Found a post link! url=" + element.href);
+            console.log("element.id = " + element.id);
+            if (element.id) {
+              console.log("Passes existence test");
+            } else {
+              console.log("Fails existence test");
+            }
+            return jQuery(element).click(function() {
+              var confirm, doPost;
+              doPost = true;
+              confirm = jQuery(element).data("confirm");
+              if (confirm != null) {
+                doPost = window.confirm(confirm);
+              }
+              if (doPost) {
+                jQuery.ajax({
+                  url: element.href,
+                  type: 'POST',
+                  success: function(data) {
+                    return _this.runtime.processServerData(data, element.id);
+                  },
+                  dataType: "json"
+                });
+              }
+              return false;
+            });
+          };
+        })(this));
         return $searchInside.find("a[data-method='delete']").each((function(_this) {
           return function(index, element) {
             console.log("Found a delete link! url=" + element.href);
@@ -516,6 +570,10 @@ Version 1.0.0
     Controller.prototype.onStop = function() {};
 
     Controller.prototype.render = function() {};
+
+    Controller.prototype.errors = function(errors) {
+      return console.log("!!!!! The errors method was called on controller " + (this.toString()) + " but not implemented!!!!!");
+    };
 
     Controller.prototype.toString = function() {
       return this.id;

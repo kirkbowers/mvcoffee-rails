@@ -31,6 +31,8 @@ module MVCoffee
           session: {}
         }
       end
+      
+      attr_reader :flash, :redirect
 
       def set_redirect(path, opts = {})
         set_flash opts
