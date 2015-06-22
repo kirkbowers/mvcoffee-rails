@@ -11,7 +11,7 @@ Version 1.0.0
  */
 
 (function() {
-  var MVCoffee,
+  var DEFAULT_OPTS, MVCoffee,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __slice = [].slice,
     __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
@@ -106,14 +106,28 @@ Version 1.0.0
 
   })();
 
+  DEFAULT_OPTS = {
+    debug: false
+  };
+
   MVCoffee.Runtime = (function() {
-    function Runtime() {
+    function Runtime(opts) {
+      var opt, value;
+      if (opts == null) {
+        opts = {};
+      }
       this.processServerData = __bind(this.processServerData, this);
+      this._preProcessServerData = __bind(this._preProcessServerData, this);
       this.getErrors = __bind(this.getErrors, this);
       this.getSession = __bind(this.getSession, this);
       this.setSession = __bind(this.setSession, this);
       this.getFlash = __bind(this.getFlash, this);
       this.setFlash = __bind(this.setFlash, this);
+      this.opts = DEFAULT_OPTS;
+      for (opt in opts) {
+        value = opts[opt];
+        this.opts[opt] = value;
+      }
       this.controllers = {};
       this.modelStore = new MVCoffee.ModelStore;
       this.active = [];
@@ -208,13 +222,12 @@ Version 1.0.0
       return this.errors;
     };
 
-    Runtime.prototype.processServerData = function(data, callback_message) {
-      var error_callback_message, key, value, _ref;
-      if (callback_message == null) {
-        callback_message = "";
-      }
+    Runtime.prototype._preProcessServerData = function(data) {
+      var key, value, _ref;
       if (data) {
-        console.log("Got data from server: " + JSON.stringify(data));
+        if (this.opts.debug) {
+          console.log("Got data from server: " + JSON.stringify(data));
+        }
         this.modelStore.load(data);
         if (data.flash != null) {
           this.setFlash(data.flash);
@@ -228,19 +241,32 @@ Version 1.0.0
         }
         this.errors = data.errors;
         if (data.redirect != null) {
-          return Turbolinks.visit(data.redirect);
+          Turbolinks.visit(data.redirect);
+          return false;
         } else {
-          if (this.errors) {
-            if (callback_message) {
-              error_callback_message = ["" + callback_message + "_errors", "errors"];
-            } else {
-              error_callback_message = "errors";
-            }
-            end;
-            return this.broadcast(error_callback_message, this.errors);
+          return true;
+        }
+      } else {
+        return false;
+      }
+    };
+
+    Runtime.prototype.processServerData = function(data, callback_message) {
+      var error_callback_message;
+      if (callback_message == null) {
+        callback_message = "";
+      }
+      if (this._preProcessServerData(data)) {
+        if (this.errors) {
+          if (callback_message) {
+            error_callback_message = ["" + callback_message + "_errors", "errors"];
           } else {
-            return this.broadcast([callback_message, "render"]);
+            error_callback_message = "errors";
           }
+          end;
+          return this.broadcast(error_callback_message, this.errors);
+        } else {
+          return this.broadcast([callback_message, "render"]);
         }
       }
     };
@@ -254,58 +280,58 @@ Version 1.0.0
       if (json) {
         parsed = $.parseJSON(json);
       }
-      this.processServerData(parsed);
-      newActive = [];
-      _ref = this.controllers;
-      for (id in _ref) {
-        contr = _ref[id];
-        if (jQuery("#" + id).length > 0) {
-          newActive.push(contr);
+      if (this._preProcessServerData(parsed)) {
+        newActive = [];
+        _ref = this.controllers;
+        for (id in _ref) {
+          contr = _ref[id];
+          if (jQuery("#" + id).length > 0) {
+            if (this.opts.debug) {
+              console.log("Starting controller identified by " + id);
+            }
+            newActive.push(contr);
+          }
         }
-      }
-      if (this.active.length) {
-        this.broadcast("stop");
-        window.onbeforeunload = null;
-        window.onfocus = null;
-        window.onblur = null;
-        if (this.onfocusId) {
-          clearInterval(this.onfocusId);
+        if (this.active.length) {
+          this.broadcast("stop");
+          window.onbeforeunload = null;
+          window.onfocus = null;
+          window.onblur = null;
+          if (this.onfocusId) {
+            clearInterval(this.onfocusId);
+          }
+          this.onfocusId = null;
         }
-        this.onfocusId = null;
-      }
-      if (newActive.length) {
-        this.active = newActive;
-        this.broadcast("start");
-        window.onfocus = (function(_this) {
-          return function() {
-            _this._startSafariKludge();
-            console.log("onfocus detected, resuming");
-            return _this.broadcast("resume");
-          };
-        })(this);
-        window.onblur = (function(_this) {
-          return function() {
-            _this._stopSafariKludge();
-            console.log("onblur detected, pausing");
-            return _this.broadcast("pause");
-          };
-        })(this);
-        return this._startSafariKludge();
-      } else {
-        return this.active = [];
+        if (newActive.length) {
+          this.active = newActive;
+          this.broadcast("start");
+          window.onfocus = (function(_this) {
+            return function() {
+              _this._startSafariKludge();
+              return _this.broadcast("resume");
+            };
+          })(this);
+          window.onblur = (function(_this) {
+            return function() {
+              _this._stopSafariKludge();
+              return _this.broadcast("pause");
+            };
+          })(this);
+          return this._startSafariKludge();
+        } else {
+          return this.active = [];
+        }
       }
     };
 
     Runtime.prototype._startSafariKludge = function() {
       this._stopSafariKludge();
       this.lastFired = new Date().getTime();
-      console.log("safari kludge setting last fired to " + this.lastFired);
       return this.onfocusId = setInterval((function(_this) {
         return function() {
           var now;
           now = new Date().getTime();
           if (now - _this.lastFired > 2000) {
-            console.log("safari onfocus kludge fired, now = " + now + ", last = " + _this.lastFired);
             _this.broadcast("pause");
             _this.broadcast("resume");
           }
@@ -369,8 +395,6 @@ Version 1.0.0
 
     Controller.prototype.resume = function() {
       this.onResume();
-      console.log("resume called on controller " + this.toString());
-      console.log("isActive = " + this.isActive);
       if ((this.refresh != null) && !this.isActive) {
         this.isActive = true;
         this.refresh();
@@ -380,7 +404,6 @@ Version 1.0.0
 
     Controller.prototype.pause = function() {
       this.onPause();
-      console.log("pause called on controller " + this.toString());
       if (this.refresh != null) {
         this.isActive = false;
         return this.stopTimer();
@@ -456,16 +479,8 @@ Version 1.0.0
             }
           };
         })(this));
-        console.log("Looking for post links");
         $searchInside.find("a[data-method='post']").each((function(_this) {
           return function(index, element) {
-            console.log("Found a post link! url=" + element.href);
-            console.log("element.id = " + element.id);
-            if (element.id) {
-              console.log("Passes existence test");
-            } else {
-              console.log("Fails existence test");
-            }
             return jQuery(element).click(function() {
               var confirm, doPost;
               doPost = true;
@@ -489,7 +504,6 @@ Version 1.0.0
         })(this));
         return $searchInside.find("a[data-method='delete']").each((function(_this) {
           return function(index, element) {
-            console.log("Found a delete link! url=" + element.href);
             return jQuery(element).click(function() {
               var confirm, doPost;
               doPost = true;
@@ -548,7 +562,6 @@ Version 1.0.0
       if (submitee instanceof jQuery) {
         element = submitee.get(0);
       }
-      console.log("Submiting " + element.id + " over turbolinks");
       jQuery.post(element.action, $(element).serialize(), (function(_this) {
         return function(data) {
           return _this.processServerData(data, element.id);
@@ -587,19 +600,14 @@ Version 1.0.0
       if ((this.refreshInterval != null) && this.refreshInterval > 0) {
         self = this;
         this.timerCount += 1;
-        console.log("Starting timer with count of " + this.timerCount);
-        this.timerId = setInterval(function() {
-          console.log("Firing timer with count of " + self.timerCount);
+        return this.timerId = setInterval(function() {
           return self.refresh.call(self);
         }, this.refreshInterval);
-        return console.log("Started timerId " + this.timerId);
       }
     };
 
     Controller.prototype.stopTimer = function() {
-      console.log("Stopping timer");
       if (this.timerId != null) {
-        console.log("clearing the interval with timerId " + this.timerId);
         clearInterval(this.timerId);
       }
       return this.timerId = null;
@@ -860,6 +868,14 @@ Version 1.0.0
 
     Model.find = function(id) {
       return this.prototype.modelStore.find(this.prototype.modelName, id);
+    };
+
+    Model.findBy = function(conditions) {
+      return this.prototype.modelStore.findBy(this.prototype.modelName, conditions);
+    };
+
+    Model.where = function(conditions) {
+      return this.prototype.modelStore.where(this.prototype.modelName, conditions);
     };
 
     Model.prototype["delete"] = function() {
