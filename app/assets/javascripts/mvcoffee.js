@@ -286,7 +286,9 @@ Version 1.0.0
         for (id in _ref) {
           contr = _ref[id];
           if (jQuery("#" + id).length > 0) {
-            console.log("Starting controller identified by " + id);
+            if (this.opts.debug) {
+              console.log("Starting controller identified by " + id);
+            }
             newActive.push(contr);
           }
         }
@@ -306,14 +308,12 @@ Version 1.0.0
           window.onfocus = (function(_this) {
             return function() {
               _this._startSafariKludge();
-              console.log("onfocus detected, resuming");
               return _this.broadcast("resume");
             };
           })(this);
           window.onblur = (function(_this) {
             return function() {
               _this._stopSafariKludge();
-              console.log("onblur detected, pausing");
               return _this.broadcast("pause");
             };
           })(this);
@@ -327,13 +327,11 @@ Version 1.0.0
     Runtime.prototype._startSafariKludge = function() {
       this._stopSafariKludge();
       this.lastFired = new Date().getTime();
-      console.log("safari kludge setting last fired to " + this.lastFired);
       return this.onfocusId = setInterval((function(_this) {
         return function() {
           var now;
           now = new Date().getTime();
           if (now - _this.lastFired > 2000) {
-            console.log("safari onfocus kludge fired, now = " + now + ", last = " + _this.lastFired);
             _this.broadcast("pause");
             _this.broadcast("resume");
           }
@@ -397,8 +395,6 @@ Version 1.0.0
 
     Controller.prototype.resume = function() {
       this.onResume();
-      console.log("resume called on controller " + this.toString());
-      console.log("isActive = " + this.isActive);
       if ((this.refresh != null) && !this.isActive) {
         this.isActive = true;
         this.refresh();
@@ -408,7 +404,6 @@ Version 1.0.0
 
     Controller.prototype.pause = function() {
       this.onPause();
-      console.log("pause called on controller " + this.toString());
       if (this.refresh != null) {
         this.isActive = false;
         return this.stopTimer();
@@ -484,16 +479,8 @@ Version 1.0.0
             }
           };
         })(this));
-        console.log("Looking for post links");
         $searchInside.find("a[data-method='post']").each((function(_this) {
           return function(index, element) {
-            console.log("Found a post link! url=" + element.href);
-            console.log("element.id = " + element.id);
-            if (element.id) {
-              console.log("Passes existence test");
-            } else {
-              console.log("Fails existence test");
-            }
             return jQuery(element).click(function() {
               var confirm, doPost;
               doPost = true;
@@ -517,7 +504,6 @@ Version 1.0.0
         })(this));
         return $searchInside.find("a[data-method='delete']").each((function(_this) {
           return function(index, element) {
-            console.log("Found a delete link! url=" + element.href);
             return jQuery(element).click(function() {
               var confirm, doPost;
               doPost = true;
@@ -576,7 +562,6 @@ Version 1.0.0
       if (submitee instanceof jQuery) {
         element = submitee.get(0);
       }
-      console.log("Submiting " + element.id + " over turbolinks");
       jQuery.post(element.action, $(element).serialize(), (function(_this) {
         return function(data) {
           return _this.processServerData(data, element.id);
@@ -615,19 +600,14 @@ Version 1.0.0
       if ((this.refreshInterval != null) && this.refreshInterval > 0) {
         self = this;
         this.timerCount += 1;
-        console.log("Starting timer with count of " + this.timerCount);
-        this.timerId = setInterval(function() {
-          console.log("Firing timer with count of " + self.timerCount);
+        return this.timerId = setInterval(function() {
           return self.refresh.call(self);
         }, this.refreshInterval);
-        return console.log("Started timerId " + this.timerId);
       }
     };
 
     Controller.prototype.stopTimer = function() {
-      console.log("Stopping timer");
       if (this.timerId != null) {
-        console.log("clearing the interval with timerId " + this.timerId);
         clearInterval(this.timerId);
       }
       return this.timerId = null;
