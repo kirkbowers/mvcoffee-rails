@@ -214,11 +214,11 @@ module MVCoffee
       def set_model_delete(model_name, data)
         obj = @json[:models][model_name] || {}
 
-        ojb[:delete] ||= []
+        obj[:delete] ||= []
         if data.respond_to? :to_a
-          obj += data.to_a
+          obj[:delete] += data.to_a
         else
-          obj << data
+          obj[:delete] << data
         end
         
         @json[:models][model_name] = obj        

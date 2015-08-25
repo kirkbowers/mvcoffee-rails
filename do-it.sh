@@ -7,4 +7,5 @@ cake minify
 cd ../mvcoffee-rails
 cp ../mvcoffee/lib/mvcoffee.* app/assets/javascripts/
 gem build mvcoffee-rails.gemspec 
-gem install mvcoffee-rails
+# gem install mvcoffee-rails
+rake install:local
