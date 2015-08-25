@@ -7,9 +7,7 @@
   <%= csrf_meta_tags %>
 </head>
 <body>
-  <script id="mvcoffee_json" type="text/json">
-    <%= raw @mvcoffee.to_json %>
-  </script>
+  <%= mvcoffee_json_tag @mvcoffee %>
 
   <p>
     Page count = <span class="page-count"></span>.
