@@ -44,13 +44,17 @@ module MVCoffee
   # this method will issue a hard redirect from the server (which will
   # wipe out the cache on the client).  This is desirable for actions that only want
   # to maintain the session when the request is over json.
-  def render_mvcoffee(opts = {})
+  def render_mvcoffee(action = nil, opts = {})
     respond_to do |format|
       format.html { 
         if @mvcoffee.redirect
+          if opts == {} and action.respond_to? :to_hash
+            opts = action
+          end
+
           redirect_to @mvcoffee.redirect, @mvcoffee.flash.merge(opts)
         else
-          render opts 
+          render action, opts 
         end
       }
       format.json { render json: @mvcoffee.to_json }

@@ -58,3 +58,9 @@ gem 'jquery-turbolinks'
 # I like this gem for rendering html in javascript in a way that very closely mimics
 # erb
 gem 'ejs'
+
+# I like this gem for doing tests
+gem 'shoulda'
+
+# I need this one for running javascript in the tests
+gem 'execjs'

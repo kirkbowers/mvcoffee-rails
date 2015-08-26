@@ -40,7 +40,8 @@ class ItemsController < ApplicationController
       @mvcoffee.set_errors @item.errors
     end
 
-    render_mvcoffee    
+    # The :index argument is largely ignored, except when running tests.
+    render_mvcoffee :index
   end
 
   # PATCH/PUT /items/1
@@ -53,7 +54,8 @@ class ItemsController < ApplicationController
       @mvcoffee.set_errors @item.errors
     end
 
-    render_mvcoffee    
+    # The :index argument is largely ignored, except when running tests.
+    render_mvcoffee  :index
   end
 
   # DELETE /items/1
@@ -64,7 +66,8 @@ class ItemsController < ApplicationController
     @mvcoffee.set_model_delete "item", @item.id
     @mvcoffee.set_redirect department_items_path, notice: 'Department was successfully destroyed.'
     
-    render_mvcoffee
+    # The :index argument is largely ignored, except when running tests.
+    render_mvcoffee :index
   end
 
   private

@@ -98,7 +98,7 @@ this:
     //= require_directory ./templates
     //= require_directory ./models
     //= require_directory ./controllers
-    //= require master
+    //= require manager
 
     this.MyNamespace || (this.MyNamespace = {});
 
@@ -121,11 +121,9 @@ any usual +render+ or +redirect_to+ calls.
       render_mvcoffee
     end
     
-And finally, add these lines inside the +body+ tag of your +application.html.erb+ file:
+And finally, add this line inside the +body+ tag of your +application.html.erb+ file:
 
-    <script id="mvcoffee_json" type="text/json">
-      <%= raw @mvcoffee.to_json %>
-    </script>
+    <%= mvcoffee_json_tag @mvcoffee %>
 
 This ensures that the client-side code will receive the json it needs to populate and
 manage the model store cache.  The MVCoffee runtime will always look for this 
@@ -136,21 +134,17 @@ manage the model store cache.  The MVCoffee runtime will always look for this
 Contributing to this project is of course welcome.  There are three areas in which I
 could really use help:
 
-* Testing:  I'm sure I'll get scolded for this, but all testing has been done "in the 
+* Testing:  I'm sure I'll get scolded for this, but most testing has been done "in the 
 field".  This gem has been thoroughly put through its paces by the project for which it
 was initially developed.  In order to be truly confident it is working as expected, it 
-needs to be exercised in the context of a fully functioning Rails project.  How to test
+needs to be exercised in the context of a fully functioning Rails project.  
+I have added a toy rails project as part of the source that
+both allows you to exercise the gem in a blackbox fashion, plus supplies some automated
+tests where possible.  How to test
 it in isolation, and have that actually prove anything, strikes me as extremely
 non-trivial and not straight forward.  If this type of thing is your specialty, I'd be
 very grateful for guidance.
-* Autogenerating routes:  A script that reads the +config/routes.rb+ file and 
-autogenerates a javascript file defining globally scoped functions that mirror the 
-route functions in Rails-land would be extremely beneficial.  Say, for example you have
-a RESTful resource, "items", you'd be able to call the function +items_path+ inside
-your +.erb+ or +.haml+ server-side templates to generate hyperlinks to the items index.
-It would be nice to be able to do the exact same thing in client-side +.ejs+ templates
-without having to hand-code the routes functions.
-* Autogenerating model validations and associations:  The macro-method-like syntax for
+* Autogenerating model validations and associations:  The Class Macro method-like syntax for
 defining models in MVCoffee eases the pain of Repeating Yourself on the client, but you
 still have to manually Repeat Yourself.  Ideally, there would be a command-line utility
 that inspects the Rails definitions of models and auto-generates the corresponding

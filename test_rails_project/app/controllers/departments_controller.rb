@@ -37,7 +37,7 @@ class DepartmentsController < ApplicationController
       @mvcoffee.set_errors @department.errors
     end
 
-    render_mvcoffee    
+    render_mvcoffee :show, status: :created, location: @deparment
   end
 
   # PATCH/PUT /departments/1
@@ -50,7 +50,7 @@ class DepartmentsController < ApplicationController
       @mvcoffee.set_errors @department.errors
     end 
 
-    render_mvcoffee
+    render_mvcoffee :index
   end
 
   # DELETE /departments/1
@@ -61,7 +61,7 @@ class DepartmentsController < ApplicationController
     @mvcoffee.set_model_delete "department", @department.id
     @mvcoffee.set_redirect departments_path, notice: 'Department was successfully destroyed.'
     
-    render_mvcoffee
+    render_mvcoffee :index
   end
 
   private
