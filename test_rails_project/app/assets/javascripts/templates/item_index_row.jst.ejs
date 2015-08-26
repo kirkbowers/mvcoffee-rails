@@ -1,0 +1,8 @@
+      <tr>
+        <td><%= item.name %></td>
+        <td><%= item.sku %></td>
+        <td><%= item.price %></td>
+        <td><%= link_to('Show', department_item_path(department.id, item.id)) %></td>
+        <td><%= link_to('Edit', edit_department_item_path(department.id, item.id)) %></td>
+        <td><%= link_to('Destroy', department_item_path(department.id, item.id), { method: "delete", data: { confirm: 'Are you sure?' } } ) %></td>
+      </tr>

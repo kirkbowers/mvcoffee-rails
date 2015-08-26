@@ -34,6 +34,38 @@ link_to = function(label, link, opts) {
   return result;
 };
 
+var department_items_path = function(department_id) {
+  if (department_id instanceof Object) {
+    return "/" + "departments" + "/" + department_id["department_id"] + "/" + "items";
+  } else {
+    return "/" + "departments" + "/" + department_id + "/" + "items";
+  }
+}
+
+var new_department_item_path = function(department_id) {
+  if (department_id instanceof Object) {
+    return "/" + "departments" + "/" + department_id["department_id"] + "/" + "items" + "/" + "new";
+  } else {
+    return "/" + "departments" + "/" + department_id + "/" + "items" + "/" + "new";
+  }
+}
+
+var edit_department_item_path = function(department_id, id) {
+  if (department_id instanceof Object) {
+    return "/" + "departments" + "/" + department_id["department_id"] + "/" + "items" + "/" + department_id["id"] + "/" + "edit";
+  } else {
+    return "/" + "departments" + "/" + department_id + "/" + "items" + "/" + id + "/" + "edit";
+  }
+}
+
+var department_item_path = function(department_id, id) {
+  if (department_id instanceof Object) {
+    return "/" + "departments" + "/" + department_id["department_id"] + "/" + "items" + "/" + department_id["id"];
+  } else {
+    return "/" + "departments" + "/" + department_id + "/" + "items" + "/" + id;
+  }
+}
+
 var departments_path = function() {
   return "/departments";
 }

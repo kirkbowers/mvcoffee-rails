@@ -17,6 +17,7 @@ runtime = new MVCoffee.Runtime
 # The object values are the Model class definitions
 runtime.register_models
   department: MyNamespace.Department
+  item: MyNamespace.Item
 
 # Register controllers by passing an object literal to the register_controllers method
 # For each pair the object key is an HTML element id that will appear on any page
@@ -26,6 +27,8 @@ runtime.register_controllers
   department_form: MyNamespace.EditDepartmentController
   notice: MyNamespace.NoticeController
   department_index_table: MyNamespace.DepartmentIndexController
+  item_form: MyNamespace.EditItemController
+  item_index_table: MyNamespace.ItemIndexController
 
 # Start the runtime by calling the run method
 runtime.run()
