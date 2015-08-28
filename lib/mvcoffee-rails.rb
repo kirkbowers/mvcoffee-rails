@@ -119,17 +119,17 @@ module MVCoffee
       # client code needs only one method for displaying errors to the user and can be
       # agnostic as to whether the errors came from the client or the server.
       def set_errors(errors)
-        @json[:errors] = errors
+        @json[:errors] = errors.to_a
       end
     
       # Does the same thing as `set_errors` but will add to an existing array of errors
       # if one exists instead of replacing it.  This is what you should use if you 
-      # are modifying more than one models and errors may come from multiple sources.
+      # are modifying more than one model and errors may come from multiple sources.
       def append_errors(errors)
         if @json[:errors]
-          @json[:errors].concat!(errors)
+          @json[:errors] = @json[:errors].concat(errors.to_a)
         else
-          @json[:errors] = errors
+          @json[:errors] = errors.to_a
         end
       end
     
@@ -140,8 +140,8 @@ module MVCoffee
       # The `data` parameter should be either a single hash-like object, or an 
       # array-like object of hash-like objects.  Array-like means it responds to
       # `:collect`, which both true arrays and ActiveRecord collections do.  Hash-like
-      # means it responds to `:to_hash`, or as a fallback `:to_json`.  Single ActiveRecord
-      # records do respond to `:to_json` out of the box, but not `:to_hash`.  If you
+      # means it responds to `:to_hash`, or as a fallback `:as_json`.  Single ActiveRecord
+      # records do respond to `:as_json` out of the box, but not `:to_hash`.  If you
       # provide a `to_hash` method in your model classes, you can explicitly set what 
       # data elements are sent to the client vs. which ones are excluded (eg. you 
       # probably don't want to send a password digest), and it allows you to send

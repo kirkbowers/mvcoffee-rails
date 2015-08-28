@@ -4,35 +4,29 @@ one_one:
   name: Item 1 in Dept 1
   sku: 11
   price: 9.99
-  department_id: 1
 
 two_one:
   name: Item 2 in Dept 1
   sku: 21
   price: 9.99
-  department_id: 1
 
 three_one:
   name: Item 3 in Dept 1
   sku: 31
   price: 9.99
-  department_id: 1
 
 one_two:
   name: Item 1 in Dept 2
   sku: 12
   price: 9.99
-  department_id: 2
 
 two_two:
   name: Item 2 in Dept 2
   sku: 22
   price: 9.99
-  department_id: 2
 
 three_two:
   name: Item 3 in Dept 2
   sku: 32
   price: 9.99
-  department_id: 2
 
