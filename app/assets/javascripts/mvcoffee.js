@@ -388,9 +388,6 @@ Version 1.0.0
               }
             }
             if (!customization.ignore) {
-              if (selector === 'a') {
-                self.log("Clientizing link with href = " + element.href);
-              }
               return jQuery(element).on(event, function(eventObject) {
                 var callback, confirm, doPost;
                 callback = element.id;
@@ -541,7 +538,6 @@ Version 1.0.0
       if (callback_message == null) {
         callback_message = "";
       }
-      this.log("Deleting over json");
       return this._ajaxWithClientize("DELETE", url, params, callback_message);
     };
 

@@ -14,6 +14,10 @@ class DepartmentsController < ApplicationController
   # GET /departments/1
   # GET /departments/1.json
   def show
+    @mvcoffee.set_model_data 'department', @department
+    @mvcoffee.set_redirect department_items_path(@department.id)
+    
+    render_mvcoffee
   end
 
   # GET /departments/new
@@ -32,7 +36,7 @@ class DepartmentsController < ApplicationController
 
     if @department.save
       @mvcoffee.set_model_data "department", @department
-      @mvcoffee.set_redirect department_items_path(@department), notice: 'Department was successfully created.'
+      @mvcoffee.set_redirect department_path(@department), notice: 'Department was successfully created.'
     else
       @mvcoffee.set_errors @department.errors
     end
@@ -45,7 +49,7 @@ class DepartmentsController < ApplicationController
   def update
     if @department.update(department_params)
       @mvcoffee.set_model_data "department", @department
-      @mvcoffee.set_redirect department_items_path(@department), notice: 'Department was successfully updated.'
+      @mvcoffee.set_redirect department_path(@department), notice: 'Department was successfully updated.'
     else
       @mvcoffee.set_errors @department.errors
     end 

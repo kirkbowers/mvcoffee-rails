@@ -78,7 +78,6 @@ module MVCoffee
         }
       end
       
-      attr_reader :flash, :redirect
 
       # Instructs the client to perform a redirect to the path provided as the first 
       # argument.  This is preferable to issuing a redirect on the server because
@@ -94,6 +93,14 @@ module MVCoffee
       def set_redirect(path, opts = {})
         set_flash opts
         @json[:redirect] = path
+      end
+    
+      def redirect
+        @json[:redirect]
+      end
+    
+      def flash
+        @json[:flash]
       end
     
       # Set's the client-side flash.  Takes a hash of keys and values, and merges them
