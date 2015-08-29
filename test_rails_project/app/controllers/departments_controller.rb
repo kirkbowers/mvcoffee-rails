@@ -4,17 +4,13 @@ class DepartmentsController < ApplicationController
   # GET /departments
   # GET /departments.json
   def index
-    @departments = @mvcoffee.all Department
-        
-    render_mvcoffee
+    @departments = @mvcoffee.all Department        
   end
 
   # GET /departments/1
   # GET /departments/1.json
   def show
-    @mvcoffee.set_redirect department_items_path(@department.id)
-    
-    render_mvcoffee
+    redirect_to department_items_path(@department.id)
   end
 
   # GET /departments/new
@@ -32,34 +28,28 @@ class DepartmentsController < ApplicationController
     @department = Department.new(department_params)
 
     if @department.save
-      @mvcoffee.set_redirect department_path(@department), notice: 'Department was successfully created.'
+      redirect_to department_path(@department), notice: 'Department was successfully created.'
     else
-      @mvcoffee.set_errors @department.errors
+      render :show, errors: @department.errors
     end
-
-    render_mvcoffee :show, status: :created, location: @deparment
   end
 
   # PATCH/PUT /departments/1
   # PATCH/PUT /departments/1.json
   def update
     if @department.update(department_params)
-      @mvcoffee.set_redirect department_path(@department), notice: 'Department was successfully updated.'
+      redirect_to department_path(@department), notice: 'Department was successfully updated.'
     else
-      @mvcoffee.set_errors @department.errors
+      render :edit, errors: @department.errors
     end 
-
-    render_mvcoffee :index
   end
 
   # DELETE /departments/1
   # DELETE /departments/1.json
   def destroy
-    @mvcoffee.delete @department
+    @mvcoffee.delete! @department
 
-    @mvcoffee.set_redirect departments_path, notice: 'Department was successfully destroyed.'
-    
-    render_mvcoffee :index
+    redirect_to departments_path, notice: 'Department was successfully destroyed.'
   end
 
   private

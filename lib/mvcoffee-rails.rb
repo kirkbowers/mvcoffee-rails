@@ -1,7 +1,62 @@
 require 'mvcoffee/rails/engine'
 require "mvcoffee/rails/version"
 
-require 'mvcoffee/mvcoffee.rb'
+require 'mvcoffee/mvcoffee'
+
+
+# This probably doesn't belong in this file, but if I try to do it in a file called
+# anything having to do with "action_controller", it confuses the whole Rails system
+# and nothing works.  It works the way I want it to in this file, so I'm not messin'
+# with it!  Not elegant, but if it ain't broke....
+module ActionController
+  class Base
+    # Set up "around aliases".  Rename the render and redirect methods to something
+    # that is guaranteed not to clash with anything.  I use these aliases below in the
+    # render_mvcoffee method.
+    alias :_mvcoffee_alias_render :render
+    alias :_mvcoffee_alias_redirect_to :redirect_to
+    
+    # Call this class macro in your application_controller.rb file if you want to 
+    # do the monkeypatch for the whole application.
+    #
+    # I could make it so this happens by default, but I think it should require an
+    # affirmative action on the programmer's part to make a monkeypatch with 
+    # potentially unintended consequences happen.  This is in keeping with the 
+    # principle of Least Surprise.  If something goes wonky after you called this 
+    # method, well, you know you called it, so you can comment it out (and probably 
+    # curse me online)  Let's hope it never comes to that....
+    def self.monkeypatch_mvcoffee
+    
+      # The really cool thing about monkeypatching this method is that it gets called
+      # automagically in your controllers at the end of each action if the action falls
+      # through.  So, with this in place, with no extra action required by the 
+      # programmer, the MVCoffee thing will just happen.  This means you can do a
+      # redirect even on a json request without even thinking about it!
+      define_method :render do |action = nil, opts = {}|
+        # Uncomment this is you want to prove it to yourself that it really is doing
+        # the around alias.
+        # puts "!!!!  Doing monkeypatched render !!!!!"
+        render_mvcoffee action, opts
+      end
+      
+      # And the cool thing about monkeypatching this method is that you can call it
+      # indiscriminately without doing that format...do business checking for json
+      # and avoiding redirecting if it is json.  Just go ahead and call redirect_to, 
+      # and the client framework will do the right thing, handling the redirect AFTER
+      # processing the json fetched over ajax.
+      define_method :redirect_to do |action, opts = {}|
+        # Uncomment this is you want to prove it to yourself that it really is doing
+        # the around alias.
+        # puts "!!!!  Doing monkeypatched redirect_to !!!!!"
+        @mvcoffee.set_redirect action, opts
+        render_mvcoffee
+      end
+    
+    end
+
+  end
+end
+
 
 # MVCoffee is a module that should be included at the top of your ApplicationController
 # just below this line:
@@ -54,14 +109,15 @@ module MVCoffee
             opts = action
           end
 
-          redirect_to @mvcoffee.redirect, @mvcoffee.flash.merge(opts)
+          _mvcoffee_alias_redirect_to @mvcoffee.redirect, @mvcoffee.flash.merge(opts)
         else
-          render action, opts 
+          _mvcoffee_alias_render action, opts 
         end
       }
-      format.json { render json: @mvcoffee.to_json }
+      format.json { _mvcoffee_alias_render json: @mvcoffee.to_json }
     end  
   end
+    
   
   # If this module is included into the application controller, this will fire for
   # all controllers and instantiate the `@mvcoffee` object.
@@ -72,3 +128,4 @@ module MVCoffee
   end
 
 end
+
