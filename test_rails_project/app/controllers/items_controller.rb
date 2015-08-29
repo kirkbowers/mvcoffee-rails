@@ -5,11 +5,7 @@ class ItemsController < ApplicationController
   # GET /items
   # GET /items.json
   def index
-    @items = @department.items
-    
-    @mvcoffee.set_model_data "department", @department
-    @mvcoffee.set_model_replace_on "item", @items, department_id: @department.id
-    @mvcoffee.set_session department_id: @department.id
+    @mvcoffee.fetch_has_many @department, :items
     
     render_mvcoffee
   end
@@ -34,7 +30,6 @@ class ItemsController < ApplicationController
     @item = @department.items.build(item_params)
 
     if @item.save
-      @mvcoffee.set_model_data "item", @item
       @mvcoffee.set_redirect department_item_path(@department.id, @item.id), notice: 'Item was successfully created.'
     else
       @mvcoffee.set_errors @item.errors
@@ -48,7 +43,6 @@ class ItemsController < ApplicationController
   # PATCH/PUT /items/1.json
   def update
     if @item.update(item_params)
-      @mvcoffee.set_model_data "item", @item
       @mvcoffee.set_redirect department_item_path(@department.id, @item.id), notice: 'Item was successfully updated.'
     else
       @mvcoffee.set_errors @item.errors
@@ -61,9 +55,8 @@ class ItemsController < ApplicationController
   # DELETE /items/1
   # DELETE /items/1.json
   def destroy
-    @item.destroy
+    @mvcoffee.delete @item
     
-    @mvcoffee.set_model_delete "item", @item.id
     @mvcoffee.set_redirect department_items_path, notice: 'Department was successfully destroyed.'
     
     # The :index argument is largely ignored, except when running tests.
@@ -73,11 +66,11 @@ class ItemsController < ApplicationController
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_item
-      @item = Item.find(params[:id])
+      @item = @mvcoffee.find Item, params[:id]
     end
 
     def set_department
-      @department = Department.find(params[:department_id])
+      @department = @mvcoffee.find Department, params[:department_id]
     end
 
     # Never trust parameters from the scary internet, only allow the white list through.

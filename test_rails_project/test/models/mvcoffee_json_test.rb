@@ -8,7 +8,7 @@ class MvcoffeeJson < ActiveSupport::TestCase
 
   context "When converting MVCoffee object to json" do
     setup do
-      @mvcoffee = MVCoffee::MVCoffee.new
+      @mvcoffee = ::MVCoffee::MVCoffee.new
       @department1 = departments(:one)
       @department2 = departments(:two)
       @item11 = items(:one_one)
@@ -705,6 +705,18 @@ class MvcoffeeJson < ActiveSupport::TestCase
       assert_equal @department1, fetched
     end
     
+    should "set the session for the fetched entity on find" do
+      id = @department1.id
+      
+      fetched = @mvcoffee.find Department, id
+    
+      script = "mvcoffee = " + @mvcoffee.to_json
+      js = ExecJS.compile(script)
+      
+      result = js.eval 'mvcoffee.session.department_id'
+      assert_equal id, result
+    end
+    
     should "populate the JSON using find" do
       id = @item11.id
       
@@ -797,6 +809,18 @@ class MvcoffeeJson < ActiveSupport::TestCase
       assert_equal items, fetched
     end
     
+    should "set the session for the fetched has_many entity on find" do
+      department = @department1
+      
+      fetched = @mvcoffee.fetch_has_many department, :items
+    
+      script = "mvcoffee = " + @mvcoffee.to_json
+      js = ExecJS.compile(script)
+      
+      result = js.eval 'mvcoffee.session.department_id'
+      assert_equal @department1.id, result
+    end
+    
     should "populate the JSON using fetch_has_many with singular symbol" do
       department = @department1
       items = department.items
@@ -848,6 +872,28 @@ class MvcoffeeJson < ActiveSupport::TestCase
       result = js.eval 'mvcoffee.models.item.replace_on'
       assert_equal expected_replace_on, result      
     end
+
+    should "destroy a record using the convenience delete method" do
+      @mvcoffee.delete! @department1
+      
+      departments = Department.all
+      
+      assert_equal 1, departments.count
+      assert_equal @department2, departments[0]
+    end
+
+    should "set delete in the JSON using the convenience delete method" do
+      @mvcoffee.delete! @department1
+      
+      script = "mvcoffee = " + @mvcoffee.to_json
+      js = ExecJS.compile(script)
+      
+      result = js.eval 'mvcoffee.models.department.delete.length'
+      assert_equal 1, result
+    
+      result = js.eval 'mvcoffee.models.department.delete[0]'
+      assert_equal @department1.id, result
+    end    
 
   end
 end

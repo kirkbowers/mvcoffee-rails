@@ -4,17 +4,14 @@ class DepartmentsController < ApplicationController
   # GET /departments
   # GET /departments.json
   def index
-    @departments = Department.all
-    
-    @mvcoffee.set_model_replace_on "department", @departments, {}
-    
+    @departments = @mvcoffee.all Department
+        
     render_mvcoffee
   end
 
   # GET /departments/1
   # GET /departments/1.json
   def show
-    @mvcoffee.set_model_data 'department', @department
     @mvcoffee.set_redirect department_items_path(@department.id)
     
     render_mvcoffee
@@ -35,7 +32,6 @@ class DepartmentsController < ApplicationController
     @department = Department.new(department_params)
 
     if @department.save
-      @mvcoffee.set_model_data "department", @department
       @mvcoffee.set_redirect department_path(@department), notice: 'Department was successfully created.'
     else
       @mvcoffee.set_errors @department.errors
@@ -48,7 +44,6 @@ class DepartmentsController < ApplicationController
   # PATCH/PUT /departments/1.json
   def update
     if @department.update(department_params)
-      @mvcoffee.set_model_data "department", @department
       @mvcoffee.set_redirect department_path(@department), notice: 'Department was successfully updated.'
     else
       @mvcoffee.set_errors @department.errors
@@ -60,9 +55,8 @@ class DepartmentsController < ApplicationController
   # DELETE /departments/1
   # DELETE /departments/1.json
   def destroy
-    @department.destroy
-    
-    @mvcoffee.set_model_delete "department", @department.id
+    @mvcoffee.delete @department
+
     @mvcoffee.set_redirect departments_path, notice: 'Department was successfully destroyed.'
     
     render_mvcoffee :index
@@ -71,7 +65,7 @@ class DepartmentsController < ApplicationController
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_department
-      @department = Department.find(params[:id])
+      @department = @mvcoffee.find Department, params[:id]
     end
 
     # Never trust parameters from the scary internet, only allow the white list through.
