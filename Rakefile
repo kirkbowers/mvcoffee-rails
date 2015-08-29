@@ -5,20 +5,18 @@ require "rdoc2md"
 
 desc 'Run all the tests in the test_rails_project'
 task :test do
-  cd 'test_rails_project'
-  sh 'rake test'
-  # Come back home in case another task runs after this one
-  cd '..'
+  cd 'test_rails_project' do
+    sh 'rake test'
+  end
 end
 
 desc 'Build the js files in the sibling mvcoffee project'
 task :mvcoffee_js do
   puts "cd-ing to sibling mvcoffee project"
-  cd '../mvcoffee'
-  puts 'Building mvcoffee.js'
-  sh 'cake minify'
-  # Come back home in case another task runs after this one
-  cd '../mvcoffee-rails'
+  cd '../mvcoffee' do 
+    puts 'Building mvcoffee.js'
+    sh 'cake minify'
+  end
 end
 
 desc 'Copy the js files from the sibling mvcoffee project'
