@@ -17,21 +17,7 @@ class MvcoffeeJson < ActiveSupport::TestCase
       @item12 = items(:one_two)
       @item22 = items(:two_two)
       @item32 = items(:three_two)
-      
-      @item11.department = @department1
-      @item11.save!
-      @item21.department = @department1
-      @item21.save!
-      @item31.department = @department1
-      @item31.save!
-      
-      @item12.department = @department2
-      @item12.save!
-      @item22.department = @department2
-      @item22.save!
-      @item32.department = @department2
-      @item32.save!
-      
+            
       Department.class_eval do
         define_method :to_hash do
           {
