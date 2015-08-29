@@ -674,7 +674,181 @@ class MvcoffeeJson < ActiveSupport::TestCase
       assert_equal @item21.id, result
     end    
     
+    # ----------------------------------------------------------------------
+    # Check pass through on set data
     
+    should "pass through fetched data on set_model_data" do
+      fetched = Department.all
+      
+      returned = @mvcoffee.set_model_data 'department', fetched
+      
+      assert_equal fetched, returned
+    end
+    
+    should "pass through fetched data on set_model_replace_on" do
+      fetched = Department.all
+      
+      returned = @mvcoffee.set_model_replace_on 'department', fetched, {}
+      
+      assert_equal fetched, returned
+    end
+
+    # ----------------------------------------------------------------------
+    # Check convenience fetchers
+    #
+    
+    should "return the correct entity from find" do
+      id = @department1.id
+      
+      fetched = @mvcoffee.find Department, id
+      
+      assert_equal @department1, fetched
+    end
+    
+    should "populate the JSON using find" do
+      id = @item11.id
+      
+      fetched = @mvcoffee.find Item, id
+
+      script = "mvcoffee = " + @mvcoffee.to_json
+      js = ExecJS.compile(script)
+      
+      result = js.eval 'mvcoffee.models.item.data.id'
+      assert_equal @item11.id, result
+      
+      result = js.eval 'mvcoffee.models.item.data.department_id'
+      assert_equal @item11.department.id, result
+      
+      result = js.eval 'mvcoffee.models.item.data.name'
+      assert_equal @item11.name, result
+      
+      result = js.eval 'mvcoffee.models.item.data.sku'
+      assert_equal @item11.sku, result
+      
+      result = js.eval 'mvcoffee.models.item.data.price'
+      assert_equal @item11.price.to_s, result
+      
+      result = js.eval 'mvcoffee.models.item.data.updated_at'
+      assert_not_nil result
+    end
+      
+    should "return the correct entities from all" do
+      departments = Department.all
+      
+      fetched = @mvcoffee.all Department
+      
+      assert_equal departments, fetched
+    end
+    
+    should "populate the JSON using all" do
+      departments = Department.all
+      
+      fetched = @mvcoffee.all Department
+      
+      script = "mvcoffee = " + @mvcoffee.to_json
+      js = ExecJS.compile(script)
+      
+      result = js.eval 'mvcoffee.models.department.data.length'
+      assert_equal 2, result      
+      
+      result = js.eval 'mvcoffee.models.department.data[0].name'
+      assert_equal departments[0].name, result      
+      
+      result = js.eval 'mvcoffee.models.department.data[1].name'
+      assert_equal departments[1].name, result      
+      
+      result = js.eval 'mvcoffee.models.department.replace_on'
+      assert_equal Hash.new, result      
+    end
+
+    should "return the correct entities from fetch_has_many with singular symbol" do
+      department = @department1
+      items = department.items
+      
+      fetched = @mvcoffee.fetch_has_many department, :item
+      
+      assert_equal items, fetched
+    end
+    
+    should "return the correct entities from fetch_has_many with plural symbol" do
+      department = @department1
+      items = department.items
+      
+      fetched = @mvcoffee.fetch_has_many department, :items
+      
+      assert_equal items, fetched
+    end
+
+    should "return the correct entities from fetch_has_many with singular string" do
+      department = @department1
+      items = department.items
+      
+      fetched = @mvcoffee.fetch_has_many department, 'item'
+      
+      assert_equal items, fetched
+    end
+    
+    should "return the correct entities from fetch_has_many with plural string" do
+      department = @department1
+      items = department.items
+      
+      fetched = @mvcoffee.fetch_has_many department, 'items'
+      
+      assert_equal items, fetched
+    end
+    
+    should "populate the JSON using fetch_has_many with singular symbol" do
+      department = @department1
+      items = department.items
+      
+      fetched = @mvcoffee.fetch_has_many department, :item
+      
+      script = "mvcoffee = " + @mvcoffee.to_json
+      js = ExecJS.compile(script)
+      
+      result = js.eval 'mvcoffee.models.item.data.length'
+      assert_equal 3, result      
+      
+      result = js.eval 'mvcoffee.models.item.data[0].name'
+      assert_equal items[0].name, result      
+      
+      result = js.eval 'mvcoffee.models.item.data[1].name'
+      assert_equal items[1].name, result      
+      
+      result = js.eval 'mvcoffee.models.item.data[2].name'
+      assert_equal items[2].name, result      
+      
+      expected_replace_on = { "department_id" => department.id}
+      result = js.eval 'mvcoffee.models.item.replace_on'
+      assert_equal expected_replace_on, result      
+    end
+    
+    should "populate the JSON using fetch_has_many with plural symbol" do
+      department = @department1
+      items = department.items
+      
+      fetched = @mvcoffee.fetch_has_many department, :items
+      
+      script = "mvcoffee = " + @mvcoffee.to_json
+      js = ExecJS.compile(script)
+      
+      result = js.eval 'mvcoffee.models.item.data.length'
+      assert_equal 3, result      
+      
+      result = js.eval 'mvcoffee.models.item.data[0].name'
+      assert_equal items[0].name, result      
+      
+      result = js.eval 'mvcoffee.models.item.data[1].name'
+      assert_equal items[1].name, result      
+      
+      result = js.eval 'mvcoffee.models.item.data[2].name'
+      assert_equal items[2].name, result      
+      
+      expected_replace_on = { "department_id" => department.id}
+      result = js.eval 'mvcoffee.models.item.replace_on'
+      assert_equal expected_replace_on, result      
+    end
+
   end
 end
 

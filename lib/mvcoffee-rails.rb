@@ -115,6 +115,12 @@ module MVCoffee
           set_errors opts[:errors]
         end
       end
+
+
+      def set_session(opts)
+        @json[:session].merge! opts
+      end
+      
         
       # Takes an array of errors and sends them to the client.  Usually this should be
       # set as the array of errors on whatever model is being updated.  Since this 
@@ -187,6 +193,10 @@ module MVCoffee
         # If we did get a hash back on the first line, it is a reference, but since we
         # merged into it, it is safe to reassign it back.
         @json[:models][model_name] = obj
+        
+        # Pass the data through.  That was you can do an assignment on a fetch in 
+        # one step
+        data
       end
     
       # This does the same thing as `set_model_data` (in fact it defers to that method
@@ -201,7 +211,10 @@ module MVCoffee
       #     @mvcoffee.set_model_replace_on 'item', @items, user_id: @user.id
       #
       def set_model_replace_on(model_name, data, foreign_keys)
-        obj = set_model_data(model_name, data)
+        set_model_data(model_name, data)
+        
+        # This is guaranteed to be non-nil after set_model_data has been called.
+        obj = @json[:models][model_name]
         
         obj[:replace_on] = foreign_keys
         
@@ -210,6 +223,9 @@ module MVCoffee
         # If we did get a hash back on the first line, it is a reference, but since we
         # merged into it, it is safe to reassign it back.
         @json[:models][model_name] = obj
+        
+        # Pass the data through
+        data
       end
     
       # Instructs the client to delete certain records from the model store cache.  This
@@ -235,10 +251,36 @@ module MVCoffee
         @json[:models][model_name] = obj        
       end      
     
-      def set_session(opts)
-        @json[:session].merge! opts
+    
+    
+    
+      def find(model, id)
+        table_name = model.table_name.singularize
+        data = model.find id
+        
+        set_model_data table_name, data
       end
-      
+    
+      def all(model)
+        table_name = model.table_name.singularize
+        data = model.all
+
+        set_model_replace_on table_name, data, {}
+      end
+
+      def fetch_has_many(entity, has_many_of)
+        table_name = has_many_of.to_s.singularize
+        method_call = table_name.pluralize.to_sym
+        foreign_key = "#{entity.class.table_name.singularize}_id"
+        
+        data = entity.send method_call
+        
+        replace_on = { foreign_key => entity.id }
+        
+        set_model_replace_on table_name, data, replace_on
+      end
+        
+    
       def to_json
         @json.to_json
       end
