@@ -29,4 +29,8 @@ task :build => :copy_js
 
 task 'install:local' => :build
 
+desc 'Build it, and install it locally'
+task :default => 'install:local'
+
+desc 'Build it, install it locally, and test it'
 task :all => ['install:local', :test]

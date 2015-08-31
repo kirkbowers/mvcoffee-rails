@@ -900,6 +900,8 @@ Version 1.0.0
 
     Model.prototype.errors = [];
 
+    Model.prototype.errorsForField = {};
+
     Model.prototype.valid = true;
 
     Model.order = function(array, order, opts) {
@@ -1144,6 +1146,7 @@ Version 1.0.0
       var confirm, field, isNumber, j, k, len1, len2, matches, ref, subval, tokenizer, validation, validations, value;
       this.valid = true;
       this.errors = [];
+      this.errorsForField = {};
       ref = this.fields;
       for (j = 0, len1 = ref.length; j < len1; j++) {
         field = ref[j];
@@ -1382,7 +1385,7 @@ Version 1.0.0
     };
 
     Model.prototype.addError = function(field, validation, subval, message) {
-      var name;
+      var base, errorMessage, name, name1;
       this.valid = false;
       name = field.display;
       if (name == null) {
@@ -1393,12 +1396,17 @@ Version 1.0.0
         }
       }
       if ((subval != null ? subval.message : void 0) != null) {
-        return this.errors.push(name + " " + subval.message);
+        errorMessage = name + " " + subval.message;
       } else if ((validation != null ? validation.message : void 0) != null) {
-        return this.errors.push(name + " " + validation.message);
+        errorMessage = name + " " + validation.message;
       } else {
-        return this.errors.push(name + " " + message);
+        errorMessage = name + " " + message;
       }
+      this.errors.push(errorMessage);
+      if ((base = this.errorsForField)[name1 = field.name] == null) {
+        base[name1] = [];
+      }
+      return this.errorsForField[field.name].push(errorMessage);
     };
 
     return Model;
