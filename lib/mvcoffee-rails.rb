@@ -1,5 +1,6 @@
 require 'mvcoffee/rails/engine'
 require "mvcoffee/rails/version"
+require "mvcoffee/rails/active_record"
 
 require 'mvcoffee/mvcoffee'
 
