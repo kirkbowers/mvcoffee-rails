@@ -477,7 +477,8 @@ Version 1.0.0
       params = jQuery.param(this.session);
       expiration = new Date();
       expiration.setTime(expiration.getTime() + 2000);
-      return document.cookie = "mvcoffee_session=" + params + "; expires=" + expiration;
+      document.cookie = "mvcoffee_session=" + params + "; expires=" + expiration;
+      return this.log("Sending client session " + params);
     };
 
     Runtime.prototype.visit = function(url) {
@@ -772,7 +773,7 @@ Version 1.0.0
             }
             for (k = 0, len2 = toBeRemoved.length; k < len2; k++) {
               record = toBeRemoved[k];
-              this._delete_with_cascade(modelName, record.id);
+              this["delete"](modelName, record.id);
             }
           }
         }

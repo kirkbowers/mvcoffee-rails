@@ -22,18 +22,13 @@ module ActiveRecord
     
       # Okay, done changing this class, let's change the child class
       
-      # I'm assuming that if this class is namespaced in a module, then the child
-      # class should be namespaced the same.
-      prefix_match = name.match /^.*::/
-      prefix = ""
-      if prefix_match
-        prefix = prefix_match[0]
-      end
       
       # Create a reference to the child class definition.
       # It doesn't have to be class_eval here, it could be regular eval, but I've read
       # this is safer from code injection.
-      clazz = class_eval "::#{prefix}#{child.to_s.singularize.camelcase}"
+      #
+      # Plus, doing this as a class_eval puts us in the same namespace as the parent.
+      clazz = class_eval "#{child.to_s.singularize.camelcase}"
 
       refresh_method = "refresh_#{childs}_updated_at"
       parent_name = table_name.singularize

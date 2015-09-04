@@ -123,9 +123,20 @@ module MVCoffee
   # If this module is included into the application controller, this will fire for
   # all controllers and instantiate the `@mvcoffee` object.
   ::ActionController::Base::before_action do
+    # Glean the client session from the cookie.
+    session = cookies['mvcoffee_session']
+    client_session = {}
+
+    Rails.logger.info "-- MVCoffee -- Received Client Session #{session}"
+    
+    if session
+      client_session = CGI.parse(session)
+    end
+    
     # We have to go back to the root with the leading :: since this module most likely
     # has been include'd into the controllers performing this before_action
-    @mvcoffee = ::MVCoffee::MVCoffee.new  
+    @mvcoffee = ::MVCoffee::MVCoffee.new client_session
+
   end
 
 end

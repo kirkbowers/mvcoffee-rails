@@ -5,7 +5,8 @@ class ItemsController < ApplicationController
   # GET /items
   # GET /items.json
   def index
-    @items = @mvcoffee.fetch_has_many @department, :items
+#    @items = @mvcoffee.fetch_has_many @department, :items
+    @items = @mvcoffee.refresh_has_many @department, :items
   end
 
   # GET /items/1

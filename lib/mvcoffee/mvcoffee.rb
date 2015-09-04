@@ -1,15 +1,16 @@
 module MVCoffee
   class MVCoffee
-    def initialize
+    def initialize(client_session = {})
       @json = {
         mvcoffee_version: Mvcoffee::Rails::VERSION,
         flash: {},
         models: {},
         session: {}
       }
+      
+      @client_session = client_session
     end
     
-
     # Instructs the client to perform a redirect to the path provided as the first 
     # argument.  This is preferable to issuing a redirect on the server because
     # 1. it is guaranteed to keep the client javascript session live (keeping the 
@@ -52,6 +53,17 @@ module MVCoffee
       @json[:session].merge! opts
     end
     
+    
+    def client_session(key)
+      value = @client_session[key]
+      unless value.nil?
+        if value.respond_to? :[]
+          value[0]
+        else
+          value
+        end
+      end
+    end
       
     # Takes an array of errors and sends them to the client.  Usually this should be
     # set as the array of errors on whatever model is being updated.  Since this 
@@ -135,7 +147,7 @@ module MVCoffee
       data
     end
   
-    # This does the same thing as `set_model_data` (in fact it defers to that method
+    # This does the same thing as `merge_model_data` (in fact it defers to that method
     # for converting the `data` parameter into the json format the client expects, so
     # please read that documentation too), but also instructs the client to clear out
     # a portion of the model store cache based on a set of foreign key values.
@@ -144,7 +156,7 @@ module MVCoffee
     # which to match with the corresponding values.  For example, if we wanted to 
     # replace all the items on the cache with the ones we fetched for a particular
     # user, we'd say:
-    #     @mvcoffee.set_model_replace_on 'item', @items, user_id: @user.id
+    #     @mvcoffee.replace_model_data 'item', @items, user_id: @user.id
     #
     def set_model_replace_on(model_name, data, foreign_keys)
       warn "set_model_replace_on is DEPRECATED!!  Please use replace_model_data instead"
@@ -237,7 +249,7 @@ module MVCoffee
       table_name = model.table_name.singularize
       data = model.all
 
-      replace_model_data table_name, data, {}
+      replace_model_data table_name, data
     end
 
     # Fetches and returns all of the children records of the `entity` given following
@@ -293,6 +305,92 @@ module MVCoffee
       entity.destroy
       
       set_model_delete table_name, entity.id
+    end
+
+    #==============================================================================
+    #
+    # Automatically handle caching
+    #
+    
+    # This does smart caching for you.  
+    #
+    # Concrete example:  Department has_many Item
+    # If you already have a @department (likely set by a before_action in your
+    # controller), you call
+    #     @mvcoffee.refresh_has_many @department, :items
+    # and it will follow these steps.
+    # * Check if the #{has_many_of}_updated_at is > the session value
+    # * If so, do the same fetch as fetch_has_many
+    #   and put the session value of the new updated_at
+    def refresh_has_many(entity, has_many_of)
+      table_name = has_many_of.to_s.singularize
+      method_call = table_name.pluralize.to_sym
+      parent_table_name = entity.class.table_name.singularize
+      foreign_key = "#{parent_table_name}_id"
+      
+      updated_at_call = "#{method_call}_updated_at"
+      session_key = "#{parent_table_name}[#{table_name}[#{entity.id}]]"
+      
+      client_age_string = client_session(session_key)
+      Rails.logger.info "-- MVCoffee -- Refresh has many: client age string = #{client_age_string}"
+      
+      client_age = nil
+            
+      begin
+        client_age = DateTime.parse(client_age_string)
+      rescue
+        # Ignore bad parse, just use nil
+      end
+
+      server_age = nil
+
+      if entity.respond_to? updated_at_call
+        server_age = entity.send updated_at_call
+      end
+      
+      # The shortcutted or assignment here works, but doesn't allow us to log what's
+      # happening.
+#       stale = (
+#         client_age.nil? or 
+#         server_age.nil? or  
+#         server_age.to_datetime.to_s > client_age.utc.to_s
+#       )      
+
+      stale = false
+      if client_age.nil?
+        Rails.logger.info "-- MVCoffee -- Refresh has many: client age is nil"
+        stale = true
+      elsif server_age.nil?
+        Rails.logger.info "-- MVCoffee -- Refresh has many: server age is nil"
+        stale = true
+      else
+        Rails.logger.info "-- MVCoffee -- Refresh has many: server age = #{server_age.to_datetime.to_s}"
+        Rails.logger.info "-- MVCoffee -- Refresh has many: client age = #{client_age.utc.to_s}"
+        if server_age.to_datetime.to_s > client_age.utc.to_s
+          Rails.logger.info "-- MVCoffee -- Refresh has many: server is newer, it's stale"
+          stale = true
+        else
+          Rails.logger.info "-- MVCoffee -- Refresh has many: client is up to date"
+        end
+      end
+        
+
+      if stale      
+        data = entity.send method_call
+      
+        replace_on = { foreign_key => entity.id }
+      
+        set_session replace_on
+
+        server_age_hash = { session_key => server_age }
+        Rails.logger.info "-- MVCoffee -- Refresh has many: server age session message = #{server_age_hash}"
+        set_session server_age_hash
+
+        replace_model_data table_name, data, replace_on    
+      else
+        # return an empty array if we didn't fetch anything fresh
+        []
+      end
     end
   
     #==============================================================================
