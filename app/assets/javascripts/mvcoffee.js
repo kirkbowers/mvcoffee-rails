@@ -1102,6 +1102,33 @@ Version 1.0.0
 
     Model.has_many = Model.hasMany;
 
+    Model.hasOne = function(name, options) {
+      var methodName, self;
+      if (options == null) {
+        options = {};
+      }
+      methodName = options.as || name;
+      if (!this.prototype.hasOwnProperty("_associations_has_many")) {
+        this.prototype._associations_has_many = [];
+      }
+      this.prototype._associations_has_many.push(methodName);
+      self = this;
+      return this.prototype[methodName] = function() {
+        var constraints, foreignKey, modelStore, result;
+        modelStore = self.prototype.modelStore;
+        foreignKey = options.foreignKey || options.foreign_key || (self.prototype.modelName + "_id");
+        result = null;
+        if (modelStore != null) {
+          constraints = {};
+          constraints[foreignKey] = this.id;
+          result = modelStore.findBy(name, constraints);
+        }
+        return result;
+      };
+    };
+
+    Model.has_one = Model.hasOne;
+
     Model.belongsTo = function(name, options) {
       var foreignKey, methodName, self;
       if (options == null) {
