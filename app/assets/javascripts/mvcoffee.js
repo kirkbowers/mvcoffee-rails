@@ -810,6 +810,11 @@ Version 1.0.0
       return results;
     };
 
+    ModelStore.prototype.save = function(modelName, modelObj) {
+      var ref;
+      return (ref = this.store[modelName]) != null ? ref[modelObj.id] = modelObj : void 0;
+    };
+
     ModelStore.prototype.find = function(model, id) {
       var ref;
       return (ref = this.store[model]) != null ? ref[id] : void 0;
@@ -963,6 +968,17 @@ Version 1.0.0
 
     Model.where = function(conditions) {
       return this.prototype.modelStore.where(this.prototype.modelName, conditions);
+    };
+
+    Model.prototype.save = function() {
+      if (this.validate()) {
+        this.modelStore.save(this.modelName, this);
+      }
+      return this.valid;
+    };
+
+    Model.prototype.saveAlways = function() {
+      return this.modelStore.save(this.modelName, this);
     };
 
     Model.prototype["delete"] = function() {

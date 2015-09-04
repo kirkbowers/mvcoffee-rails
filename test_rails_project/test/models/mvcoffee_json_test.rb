@@ -315,11 +315,11 @@ class MvcoffeeJson < ActiveSupport::TestCase
     
     #--------------------------------------------------------------------------
     #
-    # set_model_data
+    # merge_model_data
     #
     
     should "set model data with only one model" do
-      @mvcoffee.set_model_data 'item', @item11
+      @mvcoffee.merge_model_data 'item', @item11
       
       script = "mvcoffee = " + @mvcoffee.to_json
       js = ExecJS.compile(script)
@@ -345,7 +345,7 @@ class MvcoffeeJson < ActiveSupport::TestCase
       
     should "set model data with a collection of models" do
       items = @department1.items
-      @mvcoffee.set_model_data 'item', items
+      @mvcoffee.merge_model_data 'item', items
       
       script = "mvcoffee = " + @mvcoffee.to_json
       js = ExecJS.compile(script)
@@ -409,7 +409,7 @@ class MvcoffeeJson < ActiveSupport::TestCase
     end
       
     should "set model data with a to_hash and hierarchical data" do    
-      @mvcoffee.set_model_data 'department', @department1
+      @mvcoffee.merge_model_data 'department', @department1
     
       script = "mvcoffee = " + @mvcoffee.to_json
       js = ExecJS.compile(script)
@@ -454,7 +454,7 @@ class MvcoffeeJson < ActiveSupport::TestCase
     
     should "set collection model data with a to_hash and hierarchical data" do   
       departments = Department.all 
-      @mvcoffee.set_model_data 'department', Department.all
+      @mvcoffee.merge_model_data 'department', Department.all
     
       script = "mvcoffee = " + @mvcoffee.to_json
       js = ExecJS.compile(script)
@@ -537,7 +537,7 @@ class MvcoffeeJson < ActiveSupport::TestCase
       
     should "set replace on model data with a collection of models" do
       items = @department1.items
-      @mvcoffee.set_model_replace_on 'item', items, department_id: @department1.id
+      @mvcoffee.replace_model_data 'item', items, department_id: @department1.id
       
       script = "mvcoffee = " + @mvcoffee.to_json
       js = ExecJS.compile(script)
@@ -663,18 +663,18 @@ class MvcoffeeJson < ActiveSupport::TestCase
     # ----------------------------------------------------------------------
     # Check pass through on set data
     
-    should "pass through fetched data on set_model_data" do
+    should "pass through fetched data on merge_model_data" do
       fetched = Department.all
       
-      returned = @mvcoffee.set_model_data 'department', fetched
+      returned = @mvcoffee.merge_model_data 'department', fetched
       
       assert_equal fetched, returned
     end
     
-    should "pass through fetched data on set_model_replace_on" do
+    should "pass through fetched data on replace_model_data" do
       fetched = Department.all
       
-      returned = @mvcoffee.set_model_replace_on 'department', fetched, {}
+      returned = @mvcoffee.replace_model_data 'department', fetched, {}
       
       assert_equal fetched, returned
     end

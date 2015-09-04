@@ -98,6 +98,11 @@ module MVCoffee
     # This can save on bandwidth and load on the database.
     #
     def set_model_data(model_name, data)
+      warn "set_model_data is DEPRECATED!!  Please use merge_model_data instead"
+      merge_model_data(model_name, data)
+    end
+    
+    def merge_model_data(model_name, data)
       obj = @json[:models][model_name] || {}
       
       result = nil
@@ -142,7 +147,12 @@ module MVCoffee
     #     @mvcoffee.set_model_replace_on 'item', @items, user_id: @user.id
     #
     def set_model_replace_on(model_name, data, foreign_keys)
-      set_model_data(model_name, data)
+      warn "set_model_replace_on is DEPRECATED!!  Please use replace_model_data instead"
+      replace_model_data(model_name, data, foreign_keys)
+    end
+    
+    def replace_model_data(model_name, data, foreign_keys = {})
+      merge_model_data(model_name, data)
       
       # This is guaranteed to be non-nil after set_model_data has been called.
       obj = @json[:models][model_name]
@@ -211,7 +221,7 @@ module MVCoffee
 
       set_session "#{table_name}_id" => id
       
-      set_model_data table_name, data
+      merge_model_data table_name, data
     end
   
     # Finds and returns all records of the given model.  It sets the fetched records 
@@ -227,7 +237,7 @@ module MVCoffee
       table_name = model.table_name.singularize
       data = model.all
 
-      set_model_replace_on table_name, data, {}
+      replace_model_data table_name, data, {}
     end
 
     # Fetches and returns all of the children records of the `entity` given following
@@ -262,7 +272,7 @@ module MVCoffee
       
       set_session replace_on
 
-      set_model_replace_on table_name, data, replace_on
+      replace_model_data table_name, data, replace_on
     end
       
     # Destroys the given `entity` and communicates to the client to remove this
