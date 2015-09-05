@@ -433,8 +433,16 @@ Version 1.0.0
             return true;
           }
         }, function(element, callback) {
+          var params, url;
           if (element.method === "get" || element.method === "GET") {
-            return self.visit(element.action);
+            params = jQuery.params(jQuery(element).serialize());
+            url = element.action;
+            if (/\?/.test(url)) {
+              url += '+' + params;
+            } else {
+              url += '?' + params;
+            }
+            return self.visit(url);
           } else {
             return self.submit(element, callback);
           }
@@ -902,7 +910,7 @@ Version 1.0.0
 
     Model.prototype.fields = [];
 
-    Model.prototype._associations_has_many = [];
+    Model.prototype._associations_children = [];
 
     Model.prototype.errors = [];
 
@@ -984,13 +992,19 @@ Version 1.0.0
 
     Model.prototype["delete"] = function() {
       var assoc, child, children, j, k, len1, len2, ref;
-      ref = this._associations_has_many;
+      ref = this._associations_children;
       for (j = 0, len1 = ref.length; j < len1; j++) {
         assoc = ref[j];
         children = this[assoc]();
-        for (k = 0, len2 = children.length; k < len2; k++) {
-          child = children[k];
-          child["delete"]();
+        if (Array.isArray(children)) {
+          for (k = 0, len2 = children.length; k < len2; k++) {
+            child = children[k];
+            child["delete"]();
+          }
+        } else {
+          if (children != null) {
+            children["delete"]();
+          }
         }
       }
       return this.modelStore["delete"](this.modelName, this.id);
@@ -1078,10 +1092,10 @@ Version 1.0.0
         options = {};
       }
       methodName = options.as || MVCoffee.Pluralizer.pluralize(name);
-      if (!this.prototype.hasOwnProperty("_associations_has_many")) {
-        this.prototype._associations_has_many = [];
+      if (!this.prototype.hasOwnProperty("_associations_children")) {
+        this.prototype._associations_children = [];
       }
-      this.prototype._associations_has_many.push(methodName);
+      this.prototype._associations_children.push(methodName);
       self = this;
       return this.prototype[methodName] = function() {
         var constraints, foreignKey, modelStore, result;
@@ -1108,10 +1122,10 @@ Version 1.0.0
         options = {};
       }
       methodName = options.as || name;
-      if (!this.prototype.hasOwnProperty("_associations_has_many")) {
-        this.prototype._associations_has_many = [];
+      if (!this.prototype.hasOwnProperty("_associations_children")) {
+        this.prototype._associations_children = [];
       }
-      this.prototype._associations_has_many.push(methodName);
+      this.prototype._associations_children.push(methodName);
       self = this;
       return this.prototype[methodName] = function() {
         var constraints, foreignKey, modelStore, result;
