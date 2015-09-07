@@ -331,49 +331,14 @@ module MVCoffee
       updated_at_call = "#{method_call}_updated_at"
       session_key = "#{parent_table_name}[#{table_name}[#{entity.id}]]"
       
-      client_age_string = client_session(session_key)
-      Rails.logger.info "-- MVCoffee -- Refresh has many: client age string = #{client_age_string}"
-      
-      client_age = nil
-            
-      begin
-        client_age = DateTime.parse(client_age_string)
-      rescue
-        # Ignore bad parse, just use nil
-      end
 
       server_age = nil
 
       if entity.respond_to? updated_at_call
         server_age = entity.send updated_at_call
       end
-      
-      # The shortcutted or assignment here works, but doesn't allow us to log what's
-      # happening.
-#       stale = (
-#         client_age.nil? or 
-#         server_age.nil? or  
-#         server_age.to_datetime.to_s > client_age.utc.to_s
-#       )      
 
-      stale = false
-      if client_age.nil?
-        Rails.logger.info "-- MVCoffee -- Refresh has many: client age is nil"
-        stale = true
-      elsif server_age.nil?
-        Rails.logger.info "-- MVCoffee -- Refresh has many: server age is nil"
-        stale = true
-      else
-        Rails.logger.info "-- MVCoffee -- Refresh has many: server age = #{server_age.to_datetime.to_s}"
-        Rails.logger.info "-- MVCoffee -- Refresh has many: client age = #{client_age.utc.to_s}"
-        if server_age.to_datetime.to_s > client_age.utc.to_s
-          Rails.logger.info "-- MVCoffee -- Refresh has many: server is newer, it's stale"
-          stale = true
-        else
-          Rails.logger.info "-- MVCoffee -- Refresh has many: client is up to date"
-        end
-      end
-        
+      stale = client_stale? session_key, server_age
 
       if stale      
         data = entity.send method_call
@@ -391,6 +356,53 @@ module MVCoffee
         # return an empty array if we didn't fetch anything fresh
         []
       end
+    end
+  
+    def client_stale?(session_key, server_age)
+      client_age_string = client_session(session_key)
+      Rails.logger.info "-- MVCoffee -- client stale?: client age string = #{client_age_string}"
+      
+      client_age = nil
+            
+      begin
+        client_age = DateTime.parse(client_age_string)
+      rescue
+        # Ignore bad parse, just use nil
+      end
+  
+        
+      # The shortcutted or assignment here works, but doesn't allow us to log what's
+      # happening.
+#       stale = (
+#         client_age.nil? or 
+#         server_age.nil? or  
+#         server_age.to_datetime.to_s > client_age.utc.to_s
+#       )      
+
+      stale = false
+      if client_age.nil?
+        Rails.logger.info "-- MVCoffee -- client stale?: client age is nil"
+        stale = true
+      elsif server_age.nil?
+        Rails.logger.info "-- MVCoffee -- client stale?: server age is nil"
+        stale = true
+      else
+        Rails.logger.info "-- MVCoffee -- client stale?: server age = #{server_age.to_datetime}"
+        Rails.logger.info "-- MVCoffee -- client stale?: client age = #{client_age.utc}"
+        # Weird things happen if we just compare dates to dates.  I think somewhere in
+        # there the millis are getting lost, and we really don't need to be _that_
+        # accurate.  Odds are, if the client is stale, it's stale by minutes or days.
+        # The to_s is a cheap way to strip off millis and make sure we're comparing
+        # the same thing.
+        if server_age.to_datetime.to_s > client_age.utc.to_s
+          Rails.logger.info "-- MVCoffee -- client stale?: server is newer, it's STALE"
+          stale = true
+        else
+          Rails.logger.info "-- MVCoffee -- client stale?: client is UP TO DATE"
+        end
+      end
+        
+      stale
     end
   
     #==============================================================================
