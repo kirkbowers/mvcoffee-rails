@@ -14,6 +14,7 @@ Version 1.0.0
   var DEFAULT_OPTS, MVCoffee,
     bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     slice = [].slice,
+    hasProp = {}.hasOwnProperty,
     indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
   if (typeof exports !== "undefined" && exports !== null) {
@@ -126,6 +127,7 @@ Version 1.0.0
       this.controllers = {};
       this.modelStore = new MVCoffee.ModelStore;
       this.active = [];
+      this.listeners = [];
       this._flash = {};
       this._oldFlash = {};
       this._clientizeCustomizations = [];
@@ -150,6 +152,17 @@ Version 1.0.0
       } else {
         return this.controllers[contr.selector] = contr;
       }
+    };
+
+    Runtime.prototype.register_listeners = function() {
+      var args, j, len1, listenerClass, results;
+      args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
+      results = [];
+      for (j = 0, len1 = args.length; j < len1; j++) {
+        listenerClass = args[j];
+        results.push(this.listeners.push(new listenerClass(this)));
+      }
+      return results;
     };
 
     Runtime.prototype.register_models = function(models) {
@@ -177,16 +190,21 @@ Version 1.0.0
     };
 
     Runtime.prototype.broadcast = function() {
-      var args, controller, j, len1, messages, ref, results;
+      var args, controller, j, k, len1, len2, listener, messages, ref, ref1, results;
       messages = arguments[0], args = 2 <= arguments.length ? slice.call(arguments, 1) : [];
       if (!Array.isArray(messages)) {
         messages = [messages];
       }
       ref = this.active;
-      results = [];
       for (j = 0, len1 = ref.length; j < len1; j++) {
         controller = ref[j];
-        results.push(this.narrowcast(controller, messages, args));
+        this.narrowcast.apply(this, [controller, messages].concat(slice.call(args)));
+      }
+      ref1 = this.listeners;
+      results = [];
+      for (k = 0, len2 = ref1.length; k < len2; k++) {
+        listener = ref1[k];
+        results.push(this.narrowcast.apply(this, [listener, messages].concat(slice.call(args))));
       }
       return results;
     };
@@ -781,7 +799,7 @@ Version 1.0.0
             }
             for (k = 0, len2 = toBeRemoved.length; k < len2; k++) {
               record = toBeRemoved[k];
-              this["delete"](modelName, record.id);
+              this.remove(modelName, record.id);
             }
           }
         }
@@ -884,6 +902,10 @@ Version 1.0.0
       return delete this.store[model][id];
     };
 
+    ModelStore.prototype.remove = function(model, id) {
+      return delete this.store[model][id];
+    };
+
     ModelStore.prototype._delete_with_cascade = function(model, id) {
       var record;
       record = this.store[model][id];
@@ -902,7 +924,7 @@ Version 1.0.0
     function Model(obj) {
       this.addError = bind(this.addError, this);
       if (obj != null) {
-        this.populate(obj);
+        this.update(obj);
       }
     }
 
@@ -981,13 +1003,27 @@ Version 1.0.0
 
     Model.prototype.save = function() {
       if (this.validate()) {
-        this.modelStore.save(this.modelName, this);
+        return this.modelStore.save(this.modelName, this);
       }
-      return this.valid;
     };
 
-    Model.prototype.saveAlways = function() {
+    Model.prototype.store = function() {
       return this.modelStore.save(this.modelName, this);
+    };
+
+    Model.prototype.update = function(obj) {
+      var field, results, value;
+      results = [];
+      for (field in obj) {
+        if (!hasProp.call(obj, field)) continue;
+        value = obj[field];
+        if ((value instanceof Object || value instanceof Array) && this.modelStore.knowsAbout(field)) {
+          results.push(this.modelStore.load_model_data(field, value));
+        } else {
+          results.push(this[field] = value);
+        }
+      }
+      return results;
     };
 
     Model.prototype["delete"] = function() {
@@ -1012,6 +1048,10 @@ Version 1.0.0
 
     Model.prototype.destroy = function() {
       return this["delete"]();
+    };
+
+    Model.prototype.remove = function() {
+      return this.modelStore.remove(this.modelName, this.id);
     };
 
     Model.findFieldIndex = function(field) {
@@ -1098,14 +1138,26 @@ Version 1.0.0
       this.prototype._associations_children.push(methodName);
       self = this;
       return this.prototype[methodName] = function() {
-        var constraints, foreignKey, modelStore, result;
+        var constraints, foreignKey, j, join, joinTable, joins, len1, modelStore, record, result;
         modelStore = self.prototype.modelStore;
         foreignKey = options.foreignKey || options.foreign_key || (self.prototype.modelName + "_id");
         result = [];
         if (modelStore != null) {
           constraints = {};
           constraints[foreignKey] = this.id;
-          result = modelStore.where(name, constraints);
+          if (options.through) {
+            joinTable = options.through;
+            joins = modelStore.where(joinTable, constraints);
+            for (j = 0, len1 = joins.length; j < len1; j++) {
+              join = joins[j];
+              record = modelStore.find(name, join[name + "_id"]);
+              if (record) {
+                result.push(record);
+              }
+            }
+          } else {
+            result = modelStore.where(name, constraints);
+          }
         }
         if (options.order) {
           result = self.order(result, options.order);
@@ -1169,18 +1221,9 @@ Version 1.0.0
     };
 
     Model.prototype.populate = function(obj) {
-      var field, j, len1, ref, selector, value;
+      var field, j, len1, ref, selector;
       if (obj != null) {
-        for (field in obj) {
-          value = obj[field];
-          if (obj.hasOwnProperty(field)) {
-            if ((value instanceof Object || value instanceof Array) && this.modelStore.knowsAbout(field)) {
-              this.modelStore.load_model_data(field, value);
-            } else {
-              this[field] = value;
-            }
-          }
-        }
+        this.update(obj);
       } else {
         ref = this.fields;
         for (j = 0, len1 = ref.length; j < len1; j++) {
