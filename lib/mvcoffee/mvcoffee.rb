@@ -387,14 +387,14 @@ module MVCoffee
         Rails.logger.info "-- MVCoffee -- client stale?: server age is nil"
         stale = true
       else
-        Rails.logger.info "-- MVCoffee -- client stale?: server age = #{server_age.to_datetime}"
+        Rails.logger.info "-- MVCoffee -- client stale?: server age = #{server_age.to_datetime.utc}"
         Rails.logger.info "-- MVCoffee -- client stale?: client age = #{client_age.utc}"
         # Weird things happen if we just compare dates to dates.  I think somewhere in
         # there the millis are getting lost, and we really don't need to be _that_
         # accurate.  Odds are, if the client is stale, it's stale by minutes or days.
         # The to_s is a cheap way to strip off millis and make sure we're comparing
         # the same thing.
-        if server_age.to_datetime.to_s > client_age.utc.to_s
+        if server_age.to_datetime.utc.to_s > client_age.utc.to_s
           Rails.logger.info "-- MVCoffee -- client stale?: server is newer, it's STALE"
           stale = true
         else

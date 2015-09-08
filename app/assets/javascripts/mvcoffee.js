@@ -984,7 +984,7 @@ Version 1.0.0
       }
       result = this.prototype.modelStore.all(this.prototype.modelName);
       if (options.order) {
-        result = this.sort(result, options.order);
+        result = this.order(result, options.order);
       }
       return result;
     };
