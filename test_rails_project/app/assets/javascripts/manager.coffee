@@ -3,7 +3,7 @@ count = 0
 $(document).ready( ->
   count += 1
   
-  $(".page-count").text("something " + count)
+  $(".page-count").text(count)
 )
 
 
@@ -18,6 +18,8 @@ runtime = new MVCoffee.Runtime
 runtime.register_models
   department: MyNamespace.Department
   item: MyNamespace.Item
+  user: MyNamespace.User
+  shopping_cart_item: MyNamespace.ShoppingCartItem
 
 # Register controllers by passing an object literal to the register_controllers method
 # For each pair the object key is an HTML element id that will appear on any page
@@ -29,6 +31,8 @@ runtime.register_controllers
   department_index_table: MyNamespace.DepartmentIndexController
   item_form: MyNamespace.EditItemController
   item_index_table: MyNamespace.ItemIndexController
+  user_form: MyNamespace.EditUserController
+  shopping_cart: MyNamespace.ShoppingCartController
 
 # Start the runtime by calling the run method
 runtime.run()

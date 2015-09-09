@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+
   resources :departments do
     resources :items
   end
@@ -8,6 +9,13 @@ Rails.application.routes.draw do
   # You can have the root of your site routed with "root"
   # root 'welcome#index'
   root 'departments#index'
+
+  resources :users
+  post 'user/login/:id' => 'users#login', as: 'user_login'
+  delete 'user/logout' => 'users#logout', as: 'user_logout'
+
+  post 'shopping_cart_item/:item_id' => 'shopping_cart_items#create', as: 'create_shopping_cart_item'
+  delete 'shopping_cart_item/:item_id' => 'shopping_cart_items#destroy', as: 'destroy_shopping_cart_item'
 
   # Example of regular route:
   #   get 'products/:id' => 'catalog#view'

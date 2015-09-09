@@ -1,0 +1,12 @@
+<%= form_for(@user, html: { id: 'user_form' }) do |f| %>
+      <ul id="user_form_errors">
+      </ul>
+
+  <div class="field">
+    <%= f.label :name %><br>
+    <%= f.text_field :name %>
+  </div>
+  <div class="actions">
+    <%= f.submit %>
+  </div>
+<% end %>

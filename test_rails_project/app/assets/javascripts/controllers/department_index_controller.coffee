@@ -1,4 +1,7 @@
 class MyNamespace.DepartmentIndexController extends MVCoffee.Controller
+  onStart: ->
+    @shopping_user = MyNamespace.User.find(@getSession("shopping_user_id"))
+
   render: ->
     selector = "#department_index_table"
     departments = MyNamespace.Department.all()
@@ -10,6 +13,7 @@ class MyNamespace.DepartmentIndexController extends MVCoffee.Controller
       $dept_table.append(
         JST['templates/department_index_row']
           department: department
+          shopping_user: @shopping_user
       ) 
 
     @reclientize selector

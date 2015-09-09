@@ -93,3 +93,55 @@ var department_path = function(id) {
 var root_path = function() {
   return "/";
 }
+
+var users_path = function() {
+  return "/users";
+}
+
+var new_user_path = function() {
+  return "/users/new";
+}
+
+var edit_user_path = function(id) {
+  if (id instanceof Object) {
+    return "/" + "users" + "/" + id["id"] + "/" + "edit";
+  } else {
+    return "/" + "users" + "/" + id + "/" + "edit";
+  }
+}
+
+var user_path = function(id) {
+  if (id instanceof Object) {
+    return "/" + "users" + "/" + id["id"];
+  } else {
+    return "/" + "users" + "/" + id;
+  }
+}
+
+var user_login_path = function(id) {
+  if (id instanceof Object) {
+    return "/" + "user" + "/" + "login" + "/" + id["id"];
+  } else {
+    return "/" + "user" + "/" + "login" + "/" + id;
+  }
+}
+
+var user_logout_path = function() {
+  return "/user/logout";
+}
+
+var create_shopping_cart_item_path = function(item_id) {
+  if (item_id instanceof Object) {
+    return "/" + "shopping_cart_item" + "/" + item_id["item_id"];
+  } else {
+    return "/" + "shopping_cart_item" + "/" + item_id;
+  }
+}
+
+var destroy_shopping_cart_item_path = function(item_id) {
+  if (item_id instanceof Object) {
+    return "/" + "shopping_cart_item" + "/" + item_id["item_id"];
+  } else {
+    return "/" + "shopping_cart_item" + "/" + item_id;
+  }
+}
