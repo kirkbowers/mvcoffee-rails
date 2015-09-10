@@ -310,7 +310,6 @@ Version 1.0.0
       if (token != null ? token.length : void 0) {
         this.authenticity_token = token.attr("content");
       }
-      document.cookie = "mvcoffee_session=";
       this._recycleFlash();
       this.resetClientizeCustomizations();
       json = $("#" + this.dataId).html();
@@ -503,9 +502,8 @@ Version 1.0.0
       params = jQuery.param(this.session);
       expiration = new Date();
       expiration.setTime(expiration.getTime() + 1000);
-      cookie = "mvcoffee_session=" + params + "; expires=" + expiration + "; path=/";
+      cookie = "mvcoffee_session=" + params + "; path=/; expires=" + (expiration.toGMTString());
       document.cookie = cookie;
-      this.log("Sending client session " + params);
       return this.log("Sending cookie = " + cookie);
     };
 
