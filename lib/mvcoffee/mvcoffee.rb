@@ -274,9 +274,27 @@ module MVCoffee
     #
     def fetch_has_many(entity, has_many_of)
       table_name = has_many_of.to_s.singularize
+      child_name = table_name
       method_call = table_name.pluralize.to_sym
+      childs_name = method_call
+      begin
+        options = entity.association(childs_name).reflection.options
+        if options and options[:through]
+          method_call = options[:through]
+          table_name = method_call.to_s.singularize
+        end
+      rescue
+        # Ignore
+      end
+            
       parent_table_name = entity.class.table_name.singularize
       foreign_key = "#{parent_table_name}_id"
+    
+    
+#       table_name = has_many_of.to_s.singularize
+#       method_call = table_name.pluralize.to_sym
+#       parent_table_name = entity.class.table_name.singularize
+#       foreign_key = "#{parent_table_name}_id"
       
       data = entity.send method_call
       
@@ -324,14 +342,25 @@ module MVCoffee
     #   and put the session value of the new updated_at
     def refresh_has_many(entity, has_many_of)
       table_name = has_many_of.to_s.singularize
+      child_name = table_name
       method_call = table_name.pluralize.to_sym
+      childs_name = method_call
+      begin
+        options = entity.association(childs_name).reflection.options
+        if options and options[:through]
+          method_call = options[:through]
+          table_name = method_call.to_s.singularize
+        end
+      rescue
+        # Ignore
+      end
+            
       parent_table_name = entity.class.table_name.singularize
       foreign_key = "#{parent_table_name}_id"
       
-      updated_at_call = "#{method_call}_updated_at"
-      session_key = "#{parent_table_name}[#{table_name}[#{entity.id}]]"
+      updated_at_call = "#{childs_name}_updated_at"
+      session_key = "#{parent_table_name}[#{child_name}[#{entity.id}]]"
       
-
       server_age = nil
 
       if entity.respond_to? updated_at_call

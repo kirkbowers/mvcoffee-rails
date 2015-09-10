@@ -46,8 +46,8 @@ module ActiveRecord
       # Plus, doing this as a class_eval puts us in the same namespace as the parent.
       clazz = class_eval "#{direct_descendent.to_s.singularize.camelcase}"
 
-      refresh_method = "refresh_#{childs}_updated_at"
       parent_name = table_name.singularize
+      refresh_method = "refresh_#{parent_name}_#{childs}_updated_at"
       clazz.class_eval do
         define_method refresh_method do
           parent = send parent_name

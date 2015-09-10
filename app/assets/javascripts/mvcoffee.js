@@ -499,12 +499,14 @@ Version 1.0.0
     };
 
     Runtime.prototype._setSessionCookie = function() {
-      var expiration, params;
+      var cookie, expiration, params;
       params = jQuery.param(this.session);
       expiration = new Date();
-      expiration.setTime(expiration.getTime() + 2000);
-      document.cookie = "mvcoffee_session=" + params + "; expires=" + expiration;
-      return this.log("Sending client session " + params);
+      expiration.setTime(expiration.getTime() + 1000);
+      cookie = "mvcoffee_session=" + params + "; expires=" + expiration + "; path=/";
+      document.cookie = cookie;
+      this.log("Sending client session " + params);
+      return this.log("Sending cookie = " + cookie);
     };
 
     Runtime.prototype.visit = function(url) {

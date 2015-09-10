@@ -10,7 +10,8 @@ class UsersController < ApplicationController
   # GET /users/1
   # GET /users/1.json
   def show
-    @mvcoffee.fetch_has_many @user, :shopping_cart_item
+#    @mvcoffee.fetch_has_many @user, :item
+    @mvcoffee.refresh_has_many @user, :item
   end
 
   # GET /users/new

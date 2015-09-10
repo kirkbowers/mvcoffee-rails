@@ -133,6 +133,9 @@ module MVCoffee
       client_session = CGI.parse(session)
     end
     
+    # reset the cookie
+    cookies['mvcoffee_session'] = { value: "", path: "/" }
+    
     # We have to go back to the root with the leading :: since this module most likely
     # has been include'd into the controllers performing this before_action
     @mvcoffee = ::MVCoffee::MVCoffee.new client_session
