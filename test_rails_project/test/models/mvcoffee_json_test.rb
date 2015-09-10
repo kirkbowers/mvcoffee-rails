@@ -324,22 +324,69 @@ class MvcoffeeJson < ActiveSupport::TestCase
       script = "mvcoffee = " + @mvcoffee.to_json
       js = ExecJS.compile(script)
       
-      result = js.eval 'mvcoffee.models.item.data.id'
+      result = js.eval 'mvcoffee.models.item.data[0].id'
       assert_equal @item11.id, result
       
-      result = js.eval 'mvcoffee.models.item.data.department_id'
+      result = js.eval 'mvcoffee.models.item.data[0].department_id'
       assert_equal @item11.department.id, result
       
-      result = js.eval 'mvcoffee.models.item.data.name'
+      result = js.eval 'mvcoffee.models.item.data[0].name'
       assert_equal @item11.name, result
       
-      result = js.eval 'mvcoffee.models.item.data.sku'
+      result = js.eval 'mvcoffee.models.item.data[0].sku'
       assert_equal @item11.sku, result
       
-      result = js.eval 'mvcoffee.models.item.data.price'
+      result = js.eval 'mvcoffee.models.item.data[0].price'
       assert_equal @item11.price.to_s, result
       
-      result = js.eval 'mvcoffee.models.item.data.updated_at'
+      result = js.eval 'mvcoffee.models.item.data[0].updated_at'
+      assert_not_nil result
+    end
+    
+    should "set merge model data with two models" do
+      @mvcoffee.merge_model_data 'item', @item11
+      @mvcoffee.merge_model_data 'item', @item21
+      
+      script = "mvcoffee = " + @mvcoffee.to_json
+      js = ExecJS.compile(script)
+      
+      result = js.eval 'mvcoffee.models.item.data.length'
+      assert_equal 2, result
+
+      result = js.eval 'mvcoffee.models.item.data[0].id'
+      assert_equal @item11.id, result
+      
+      result = js.eval 'mvcoffee.models.item.data[0].department_id'
+      assert_equal @item11.department.id, result
+      
+      result = js.eval 'mvcoffee.models.item.data[0].name'
+      assert_equal @item11.name, result
+      
+      result = js.eval 'mvcoffee.models.item.data[0].sku'
+      assert_equal @item11.sku, result
+      
+      result = js.eval 'mvcoffee.models.item.data[0].price'
+      assert_equal @item11.price.to_s, result
+      
+      result = js.eval 'mvcoffee.models.item.data[0].updated_at'
+      assert_not_nil result
+
+      result = js.eval 'mvcoffee.models.item.data[1].id'
+      assert_equal @item21.id, result
+      
+      result = js.eval 'mvcoffee.models.item.data[1].department_id'
+      assert_equal @item21.department.id, result
+      
+      result = js.eval 'mvcoffee.models.item.data[1].name'
+      assert_equal @item21.name, result
+      
+      result = js.eval 'mvcoffee.models.item.data[1].sku'
+      assert_equal @item21.sku, result
+      
+      result = js.eval 'mvcoffee.models.item.data[1].price'
+      assert_equal @item21.price.to_s, result
+      
+      result = js.eval 'mvcoffee.models.item.data[1].updated_at'
       assert_not_nil result
     end
       
@@ -415,39 +462,39 @@ class MvcoffeeJson < ActiveSupport::TestCase
       js = ExecJS.compile(script)
     
 
-      result = js.eval 'mvcoffee.models.department.data.id'
+      result = js.eval 'mvcoffee.models.department.data[0].id'
       assert_equal @department1.id, result
     
-      result = js.eval 'mvcoffee.models.department.data.name'
+      result = js.eval 'mvcoffee.models.department.data[0].name'
       assert_equal @department1.name, result
     
       # Here's the real clincher!  The to_hash override excludes this.
-      result = js.eval 'mvcoffee.models.department.data.updated_at'
+      result = js.eval 'mvcoffee.models.department.data[0].updated_at'
       assert_nil result
 
     
       # Plus, we should get hierarchical data here
-      result = js.eval 'mvcoffee.models.department.data.item.length'
+      result = js.eval 'mvcoffee.models.department.data[0].item.length'
       assert_equal 3, result      
 
       items = @department1.items
 
-      result = js.eval 'mvcoffee.models.department.data.item[0].id'
+      result = js.eval 'mvcoffee.models.department.data[0].item[0].id'
       assert_equal items[0].id, result      
 
-      result = js.eval 'mvcoffee.models.department.data.item[0].name'
+      result = js.eval 'mvcoffee.models.department.data[0].item[0].name'
       assert_equal items[0].name, result      
 
-      result = js.eval 'mvcoffee.models.department.data.item[1].id'
+      result = js.eval 'mvcoffee.models.department.data[0].item[1].id'
       assert_equal items[1].id, result      
 
-      result = js.eval 'mvcoffee.models.department.data.item[1].name'
+      result = js.eval 'mvcoffee.models.department.data[0].item[1].name'
       assert_equal items[1].name, result      
 
-      result = js.eval 'mvcoffee.models.department.data.item[2].id'
+      result = js.eval 'mvcoffee.models.department.data[0].item[2].id'
       assert_equal items[2].id, result      
 
-      result = js.eval 'mvcoffee.models.department.data.item[2].name'
+      result = js.eval 'mvcoffee.models.department.data[0].item[2].name'
       assert_equal items[2].name, result      
     end
       
@@ -711,22 +758,22 @@ class MvcoffeeJson < ActiveSupport::TestCase
       script = "mvcoffee = " + @mvcoffee.to_json
       js = ExecJS.compile(script)
       
-      result = js.eval 'mvcoffee.models.item.data.id'
+      result = js.eval 'mvcoffee.models.item.data[0].id'
       assert_equal @item11.id, result
       
-      result = js.eval 'mvcoffee.models.item.data.department_id'
+      result = js.eval 'mvcoffee.models.item.data[0].department_id'
       assert_equal @item11.department.id, result
       
-      result = js.eval 'mvcoffee.models.item.data.name'
+      result = js.eval 'mvcoffee.models.item.data[0].name'
       assert_equal @item11.name, result
       
-      result = js.eval 'mvcoffee.models.item.data.sku'
+      result = js.eval 'mvcoffee.models.item.data[0].sku'
       assert_equal @item11.sku, result
       
-      result = js.eval 'mvcoffee.models.item.data.price'
+      result = js.eval 'mvcoffee.models.item.data[0].price'
       assert_equal @item11.price.to_s, result
       
-      result = js.eval 'mvcoffee.models.item.data.updated_at'
+      result = js.eval 'mvcoffee.models.item.data[0].updated_at'
       assert_not_nil result
     end
       

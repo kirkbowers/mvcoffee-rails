@@ -130,12 +130,17 @@ module MVCoffee
           result = []
         end
       elsif data.respond_to? :to_hash
-        result = data.to_hash
+        result = [data.to_hash]
       else
-        result = data.as_json
+        result = [data.as_json]
       end
       
-      obj[:data] = result
+      if obj[:data]
+        obj[:data].concat result
+      else
+        obj[:data] = result
+      end
+      
       # Reassign it back.  If we got a new hash, it isn't a reference from the @json
       # object, so it won't be associated unless we make it so manually.
       # If we did get a hash back on the first line, it is a reference, but since we
@@ -289,13 +294,7 @@ module MVCoffee
             
       parent_table_name = entity.class.table_name.singularize
       foreign_key = "#{parent_table_name}_id"
-    
-    
-#       table_name = has_many_of.to_s.singularize
-#       method_call = table_name.pluralize.to_sym
-#       parent_table_name = entity.class.table_name.singularize
-#       foreign_key = "#{parent_table_name}_id"
-      
+          
       data = entity.send method_call
       
       replace_on = { foreign_key => entity.id }
