@@ -643,6 +643,29 @@ Version 1.0.0
       return this._runtime.addClientizeCustomization(customization);
     };
 
+    Controller.prototype.rerender = function(opts) {
+      var $element, as_var, collection, element, item, j, len1, locals, ref, ref1, template_path;
+      element = (ref = opts.selector) != null ? ref : opts.element;
+      $element = jQuery(element);
+      template_path = opts.template;
+      locals = (ref1 = opts.locals) != null ? ref1 : {};
+      $element.empty();
+      collection = opts.collection;
+      if (collection) {
+        as_var = opts.as;
+        if (as_var) {
+          for (j = 0, len1 = collection.length; j < len1; j++) {
+            item = collection[j];
+            locals[as_var] = item;
+            $element.append(JST[template_path](locals));
+          }
+        }
+      } else {
+        $element.append(JST[template_path](locals));
+      }
+      return this.reclientize($element);
+    };
+
     Controller.prototype.start = function() {
       this.isActive = true;
       this.onStart();
@@ -984,7 +1007,7 @@ Version 1.0.0
       }
       result = this.prototype.modelStore.all(this.prototype.modelName);
       if (options.order) {
-        result = this.order(result, options.order);
+        result = this.order(result, options.order, options);
       }
       return result;
     };
