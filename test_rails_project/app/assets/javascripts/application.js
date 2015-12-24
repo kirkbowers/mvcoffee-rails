@@ -19,7 +19,7 @@
 //= require_directory ./models
 //= require_directory ./templates
 //= require_directory ./controllers
-//= require manager
+//= require runtime
 //= require turbolinks
 
 

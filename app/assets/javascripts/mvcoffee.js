@@ -42,7 +42,6 @@ Version 1.0.0
       goose: "geese",
       datum: "data",
       alumnus: "alumni",
-      cactus: "cacti",
       hippopotamus: "hippopotami"
     };
 
@@ -131,6 +130,7 @@ Version 1.0.0
       this._flash = {};
       this._oldFlash = {};
       this._clientizeCustomizations = [];
+      this._neverClientizeSelectors = [];
       this.session = {};
       this.dataId = "mvcoffee_json";
       this.onfocusId = null;
@@ -482,8 +482,22 @@ Version 1.0.0
       }
     };
 
+    Runtime.prototype.neverClientize = function() {
+      var arg, args, j, len1, results;
+      args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
+      results = [];
+      for (j = 0, len1 = args.length; j < len1; j++) {
+        arg = args[j];
+        results.push(this._neverClientizeSelectors.push({
+          selector: arg,
+          ignore: true
+        }));
+      }
+      return results;
+    };
+
     Runtime.prototype.resetClientizeCustomizations = function() {
-      return this._clientizeCustomizations = [];
+      return this._clientizeCustomizations = this._neverClientizeSelectors.slice();
     };
 
     Runtime.prototype.addClientizeCustomization = function(customization) {

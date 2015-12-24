@@ -4,6 +4,10 @@ $(document).ready( ->
   count += 1
   
   $(".page-count").text(count)
+  
+  $("#menu").click( ->
+    alert ("Pretend menu clicked.  Shouldn't be clientized.  Page count should remain the same.")
+  )
 )
 
 
@@ -33,6 +37,8 @@ runtime.register_controllers
   item_index_table: MyNamespace.ItemIndexController
   user_form: MyNamespace.EditUserController
   shopping_cart: MyNamespace.ShoppingCartController
+  
+runtime.neverClientize '#menu'
 
 # Start the runtime by calling the run method
 runtime.run()

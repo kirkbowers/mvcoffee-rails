@@ -259,7 +259,7 @@ module MVCoffee
 
     # Fetches and returns all of the children records of the `entity` given following
     # the given `has_many_of` association.  
-    # It sets the into the client session the `id` of the parent entity, 
+    # It sets into the client session the `id` of the parent entity, 
     # identified by the key `<table_name>_id`, where `table_name` is the singular
     # snake case of the parent model.
     # It also sets the fetched records 
