@@ -312,10 +312,10 @@ Version 1.0.0
       }
       this._recycleFlash();
       this.resetClientizeCustomizations();
-      json = $("#" + this.dataId).html();
+      json = jQuery("#" + this.dataId).html();
       parsed = null;
       if (json) {
-        parsed = $.parseJSON(json);
+        parsed = jQuery.parseJSON(json);
       }
       if (this._preProcessServerData(parsed)) {
         newActive = [];
@@ -452,12 +452,14 @@ Version 1.0.0
         }, function(element, callback) {
           var params, url;
           if (element.method === "get" || element.method === "GET") {
-            params = jQuery.params(jQuery(element).serialize());
+            params = jQuery(element).serialize();
             url = element.action;
-            if (/\?/.test(url)) {
-              url += '+' + params;
-            } else {
-              url += '?' + params;
+            if (params) {
+              if (/\?/.test(url)) {
+                url += '&' + params;
+              } else {
+                url += '?' + params;
+              }
             }
             return self.visit(url);
           } else {
@@ -468,7 +470,7 @@ Version 1.0.0
           return true;
         }, function(element, callback) {
           var method;
-          method = $(element).data('method');
+          method = jQuery(element).data('method');
           if (method === "post") {
             return self.post(element.href, {}, callback);
           } else if (method === "delete") {
@@ -554,7 +556,7 @@ Version 1.0.0
       if (submitee instanceof jQuery) {
         element = submitee.get(0);
       }
-      jQuery.post(element.action, $(element).serialize(), (function(_this) {
+      jQuery.post(element.action, jQuery(element).serialize(), (function(_this) {
         return function(data) {
           return _this.processServerData(data, callback_message);
         };
@@ -613,10 +615,10 @@ Version 1.0.0
       var self;
       this.log("MVCoffee runtime run");
       self = this;
-      $(function() {
+      jQuery(function() {
         return self.go();
       });
-      return $(document).on('pagebeforeshow', function() {
+      return jQuery(document).on('pagebeforeshow', function() {
         return self.go();
       });
     };
