@@ -8,7 +8,7 @@ task 'README.md' => 'README.txt' do
 end
 
 desc 'Convert the README.md file (generated from README.txt) into html to view locally'
-task 'REAMDE.html' => 'README.md' do
+task 'README.html' => 'README.md' do
   puts "Converting README.md to README.html"
   sh 'Markdown.pl README.md > README.html'
 end

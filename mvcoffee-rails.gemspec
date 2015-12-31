@@ -10,8 +10,15 @@ Gem::Specification.new do |spec|
   spec.version       = Mvcoffee::Rails::VERSION
   spec.authors       = ["Kirk Bowers"]
   spec.email         = ["kirkbowers@yahoo.com"]
-  spec.description   = %q{I'll say something here eventually}
-  spec.summary       = %q{Here too.}
+  spec.description   = %q{<p><code>mvcoffee-rails</code> is a Rails gem that makes it easy to use the 
+<a href="https://github.com/kirkbowers/mvcoffee">MVCoffee</a> client-side MVC framework in your
+Rails project.</p>
+
+<p>The full documentation for this gem is at <a href="http://mvcoffee.org/mvcoffee-rails">mvcoffee.org</a>.</p>
+}
+  spec.summary       = %q{The server-side Rails gem that makes it easy to use the 
+MVCoffee client-side MVC framework in your
+Rails project.  Full documentation is at mvcoffee.org.}
   spec.homepage      = "https://github.com/kirkbowers/mvcoffee-rails"
   spec.license       = "MIT"
 
