@@ -1,0 +1,22 @@
+<p id="notice"><%= notice %></p>
+
+<h1>Listing Items for Department <%= @department.name %></h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Sku</th>
+      <th>Price</th>
+      <th colspan="3"></th>
+    </tr>
+  </thead>
+
+  <tbody id="item_index_table">
+  </tbody>
+</table>
+
+<br>
+
+<%= link_to 'New Item', new_department_item_path %>
+

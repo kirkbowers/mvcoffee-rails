@@ -1,0 +1,20 @@
+<%= form_for([@department, @item], html: {id: "item_form"}) do |f| %>
+  <ul id="item_form_errors">
+  </ul>
+
+  <div class="field">
+    <%= f.label :name %><br>
+    <%= f.text_field :name %>
+  </div>
+  <div class="field">
+    <%= f.label :sku %><br>
+    <%= f.number_field :sku %>
+  </div>
+  <div class="field">
+    <%= f.label :price %><br>
+    <%= f.text_field :price %>
+  </div>
+  <div class="actions">
+    <%= f.submit %>
+  </div>
+<% end %>

@@ -1,0 +1,10 @@
+<tr>
+  <td>
+    <%= item.name %>
+  </td>
+  <td>
+  <% if (shopping_user) { %>
+    <%= link_to('Remove', destroy_shopping_cart_item_path(item.id), { method: "delete" } ) %>
+  <% } %>
+  </td>
+</tr>

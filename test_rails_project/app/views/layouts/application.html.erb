@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>TestRailsProject</title>
+  <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track' => true %>
+  <%= javascript_include_tag 'application', 'data-turbolinks-track' => true %>
+  <%= csrf_meta_tags %>
+</head>
+<body>
+  <%= mvcoffee_json_tag @mvcoffee %>
+
+  <p>
+    Page count = <span class="page-count"></span>.
+  </p>
+
+  <p>
+    <%= link_to "Departments", departments_path %> |
+    <%= link_to "Users", users_path %> |
+    <a href="#" id="menu">&equiv;</a>
+  </p>
+  
+  <% if @shopping_user %>
+  <h3>
+  Shopping as <%= @shopping_user.name %> ( <%= link_to 'log out', user_logout_path, method: :delete %> )
+  </h3>
+  <% end %>
+
+<%= yield %>
+
+</body>
+</html>

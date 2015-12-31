@@ -1,0 +1,5 @@
+<h1>New Item in Department <%= @department.name %></h1>
+
+<%= render 'form' %>
+
+<%= link_to 'Back', department_items_path(@department.id) %>
