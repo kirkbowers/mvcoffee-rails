@@ -147,7 +147,7 @@ module MVCoffee
       # merged into it, it is safe to reassign it back.
       @json[:models][model_name] = obj
       
-      # Pass the data through.  That was you can do an assignment on a fetch in 
+      # Pass the data through.  That way you can do an assignment on a fetch in 
       # one step
       data
     end

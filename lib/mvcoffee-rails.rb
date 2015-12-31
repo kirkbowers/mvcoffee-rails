@@ -21,7 +21,7 @@ module ActionController
     # do the monkeypatch for the whole application.
     #
     # I could make it so this happens by default, but I think it should require an
-    # affirmative action on the programmer's part to make a monkeypatch with 
+    # explicit action on the programmer's part to make a monkeypatch with 
     # potentially unintended consequences happen.  This is in keeping with the 
     # principle of Least Surprise.  If something goes wonky after you called this 
     # method, well, you know you called it, so you can comment it out (and probably 
