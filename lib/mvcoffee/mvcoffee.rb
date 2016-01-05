@@ -114,7 +114,7 @@ module MVCoffee
       merge_model_data(model_name, data)
     end
     
-    def merge_model_data(model_name, data)
+    def merge_model_data(model_name, data, extra = {})
       obj = @json[:models][model_name] || {}
       
       result = nil
@@ -135,6 +135,14 @@ module MVCoffee
         result = [data.as_json]
       end
       
+      # This bit of nastiness allows us to add the scope attribute to a model, even
+      # if the model doesn't have the scope in its to_hash method.
+      if extra and extra.any?
+        result.each do |a|
+          a.merge! extra
+        end
+      end
+            
       if obj[:data]
         obj[:data].concat result
       else
@@ -168,8 +176,8 @@ module MVCoffee
       replace_model_data(model_name, data, foreign_keys)
     end
     
-    def replace_model_data(model_name, data, foreign_keys = {})
-      merge_model_data(model_name, data)
+    def replace_model_data(model_name, data, foreign_keys = {}, extra = {})
+      merge_model_data(model_name, data, extra)
       
       # This is guaranteed to be non-nil after set_model_data has been called.
       obj = @json[:models][model_name]
@@ -277,7 +285,7 @@ module MVCoffee
     # This sets `@items` to `@department.items` and sets the client session key
     # `"department_id"` to `@department.id`.
     #
-    def fetch_has_many(entity, has_many_of)
+    def fetch_has_many(entity, has_many_of, opts = {})
       table_name = has_many_of.to_s.singularize
       child_name = table_name
       method_call = table_name.pluralize.to_sym
@@ -294,14 +302,29 @@ module MVCoffee
             
       parent_table_name = entity.class.table_name.singularize
       foreign_key = "#{parent_table_name}_id"
-          
-      data = entity.send method_call
-      
-      replace_on = { foreign_key => entity.id }
-      
-      set_session replace_on
+        
+      perform_has_many_replace(entity, table_name, foreign_key, method_call, opts)  
 
-      replace_model_data table_name, data, replace_on
+#       replace_on = { foreign_key => entity.id }
+# 
+#       if opts[:scope]
+#         scope_method = opts[:scope].to_sym
+#         scope_key = opts[:scope].to_s
+#         
+#         data = [method_call, scope_method].inject(entity) do |ent, meth|
+#           ent.send meth
+#         end
+# 
+#         replace_on[scope_key] = true
+#         
+#         replace_model_data table_name, data, replace_on, { scope_key => true }
+#       else
+#         data = entity.send method_call
+#       
+#         replace_model_data table_name, data, replace_on
+#       end
+#                 
+#       set_session replace_on
     end
       
     # Destroys the given `entity` and communicates to the client to remove this
@@ -339,7 +362,7 @@ module MVCoffee
     # * Check if the #{has_many_of}_updated_at is > the session value
     # * If so, do the same fetch as fetch_has_many
     #   and put the session value of the new updated_at
-    def refresh_has_many(entity, has_many_of)
+    def refresh_has_many(entity, has_many_of, opts = {})
       table_name = has_many_of.to_s.singularize
       child_name = table_name
       method_call = table_name.pluralize.to_sym
@@ -359,6 +382,9 @@ module MVCoffee
       
       updated_at_call = "#{childs_name}_updated_at"
       session_key = "#{parent_table_name}[#{child_name}[#{entity.id}]]"
+      if opts[:scope]
+        session_key += "->#{opts[:scope]}"
+      end
       
       server_age = nil
 
@@ -369,17 +395,22 @@ module MVCoffee
       stale = client_stale? session_key, server_age
 
       if stale      
-        data = entity.send method_call
-      
-        replace_on = { foreign_key => entity.id }
-      
-        set_session replace_on
+#         data = entity.send method_call
+#       
+#         replace_on = { foreign_key => entity.id }
+#       
+#         set_session replace_on
+# 
+#         replace_model_data table_name, data, replace_on    
+
+        perform_has_many_replace(entity, table_name, foreign_key, method_call, opts)  
+
+
 
         server_age_hash = { session_key => server_age }
         Rails.logger.info "-- MVCoffee -- Refresh has many: server age session message = #{server_age_hash}"
         set_session server_age_hash
 
-        replace_model_data table_name, data, replace_on    
       else
         # return an empty array if we didn't fetch anything fresh
         []
@@ -440,6 +471,32 @@ module MVCoffee
 
     def to_json
       @json.to_json
+    end
+
+
+  private
+  
+    def perform_has_many_replace(entity, table_name, foreign_key, method_call, opts)
+      replace_on = { foreign_key => entity.id }
+
+      if opts[:scope]
+        scope_method = opts[:scope].to_sym
+        scope_key = opts[:scope].to_s
+        
+        data = [method_call, scope_method].inject(entity) do |ent, meth|
+          ent.send meth
+        end
+
+        replace_on[scope_key] = true
+        
+        replace_model_data table_name, data, replace_on, { scope_key => true }
+      else
+        data = entity.send method_call
+      
+        replace_model_data table_name, data, replace_on
+      end
+                
+      set_session replace_on
     end
 
   end

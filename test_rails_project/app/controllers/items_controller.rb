@@ -8,6 +8,10 @@ class ItemsController < ApplicationController
 #    @items = @mvcoffee.fetch_has_many @department, :items
     @items = @mvcoffee.refresh_has_many @department, :items
   end
+  
+  def inexpensive
+    @items = @mvcoffee.refresh_has_many @department, :items, scope: 'inexpensive'
+  end
 
   # GET /items/1
   # GET /items/1.json
