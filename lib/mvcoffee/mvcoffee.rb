@@ -403,7 +403,6 @@ module MVCoffee
 # 
 #         replace_model_data table_name, data, replace_on    
 
-        perform_has_many_replace(entity, table_name, foreign_key, method_call, opts)  
 
 
 
@@ -411,6 +410,7 @@ module MVCoffee
         Rails.logger.info "-- MVCoffee -- Refresh has many: server age session message = #{server_age_hash}"
         set_session server_age_hash
 
+        perform_has_many_replace(entity, table_name, foreign_key, method_call, opts)  
       else
         # return an empty array if we didn't fetch anything fresh
         []
@@ -489,14 +489,16 @@ module MVCoffee
 
         replace_on[scope_key] = true
         
-        replace_model_data table_name, data, replace_on, { scope_key => true }
+        result = replace_model_data table_name, data, replace_on, { scope_key => true }
       else
         data = entity.send method_call
       
-        replace_model_data table_name, data, replace_on
+        result = replace_model_data table_name, data, replace_on
       end
                 
       set_session replace_on
+      
+      result
     end
 
   end
