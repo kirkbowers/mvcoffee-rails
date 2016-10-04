@@ -1,6 +1,6 @@
 <p id="notice"><%= notice %></p>
 
-<h1>Listing Items for Department <%= @department.name %></h1>
+<h1>Listing "Inexpensive" Items (under $10) for Department <%= @department.name %></h1>
 
 <table>
   <thead>
@@ -12,13 +12,12 @@
     </tr>
   </thead>
 
-  <tbody id="item_index_table">
+  <tbody id="inexpensive_item_index_table">
   </tbody>
 </table>
 
 <br>
-
-<%= link_to 'Inexpensive Items', inexpensive_items_path %>
+<%= link_to 'All Items', department_items_path %>
 <br>
 
 <%= link_to 'New Item', new_department_item_path %>

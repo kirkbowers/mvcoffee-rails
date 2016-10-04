@@ -1,6 +1,7 @@
       <tr>
         <td><%= department.name %></td>
         <td><%= link_to('Show', department_items_path(department.id)) %></td>
+        <td><%= link_to('Show Inexpensive', inexpensive_items_path(department.id)) %></td>
 <% if (! shopping_user) { %>
         <td><%= link_to('Edit', edit_department_path(department)) %></td>
         <td><%= link_to('Destroy', department_path(department), { method: 'delete', data: { confirm: 'Are you sure?' } } ) %></td>

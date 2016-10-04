@@ -35,6 +35,7 @@ runtime.register_controllers
   department_index_table: MyNamespace.DepartmentIndexController
   item_form: MyNamespace.EditItemController
   item_index_table: MyNamespace.ItemIndexController
+  inexpensive_item_index_table: MyNamespace.InexpensiveItemsController
   user_form: MyNamespace.EditUserController
   shopping_cart: MyNamespace.ShoppingCartController
   

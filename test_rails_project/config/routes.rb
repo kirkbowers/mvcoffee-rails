@@ -3,6 +3,9 @@ Rails.application.routes.draw do
   resources :departments do
     resources :items
   end
+  
+  get '/departments/:department_id/inexpensive_items' => 'items#inexpensive', as: 'inexpensive_items'
+  
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".
 

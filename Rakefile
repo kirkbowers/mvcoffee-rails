@@ -6,7 +6,7 @@ require "rdoc2md"
 desc 'Run all the tests in the test_rails_project'
 task :test do
   cd 'test_rails_project' do
-    sh 'rake test'
+    sh 'bundle exec rake test'
   end
 end
 

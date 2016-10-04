@@ -15,6 +15,7 @@ module ActionController
     # that is guaranteed not to clash with anything.  I use these aliases below in the
     # render_mvcoffee method.
     alias :_mvcoffee_alias_render :render
+    alias :render! :render
     alias :_mvcoffee_alias_redirect_to :redirect_to
     
     # Call this class macro in your application_controller.rb file if you want to 
@@ -103,20 +104,28 @@ module MVCoffee
   # wipe out the cache on the client).  This is desirable for actions that only want
   # to maintain the session when the request is over json.
   def render_mvcoffee(action = nil, opts = {})
-    respond_to do |format|
-      format.html { 
-        if @mvcoffee.redirect
-          if opts == {} and action.respond_to? :to_hash
-            opts = action
-          end
+#     if opts == {} and action.respond_to? :to_hash
+#       # If you pass options directly to render, it is likely something like 'json:'
+#       # so it should override the monkeypatch
+#       _mvcoffee_alias_render action
+#     else
+  
+      respond_to do |format|
+        format.html { 
+          if @mvcoffee.redirect
+            if opts == {} and action.respond_to? :to_hash
+              opts = action
+            end
 
-          _mvcoffee_alias_redirect_to @mvcoffee.redirect, @mvcoffee.flash.merge(opts)
-        else
-          _mvcoffee_alias_render action, opts 
-        end
-      }
-      format.json { _mvcoffee_alias_render json: @mvcoffee.to_json }
-    end  
+            _mvcoffee_alias_redirect_to @mvcoffee.redirect, @mvcoffee.flash.merge(opts)
+          else
+            _mvcoffee_alias_render action, opts 
+          end
+        }
+        format.json { _mvcoffee_alias_render json: @mvcoffee.to_json }
+      end  
+      
+#     end
   end
     
   

@@ -4,10 +4,10 @@
 
 MVCoffee
 
-Copyright 2014, Kirk Bowers
+Copyright 2016, Kirk Bowers
 MIT License
 
-Version 1.0.0
+Version 1.1.0
  */
 
 (function() {
@@ -394,6 +394,7 @@ Version 1.0.0
         scope = scope != null ? scope : this.opts.clientizeScope;
         $searchInside = jQuery(scope);
         applyClientize = function(selector, event, validation, submission) {
+          event += ".mvcoffee";
           return $searchInside.find(selector).each(function(index, element) {
             var customization, j, len1, ref, thisCustom;
             customization = {};
@@ -405,6 +406,7 @@ Version 1.0.0
               }
             }
             if (!customization.ignore) {
+              jQuery(element).off(event);
               return jQuery(element).on(event, function(eventObject) {
                 var callback, confirm, doPost;
                 callback = element.id;
@@ -1170,7 +1172,14 @@ Version 1.0.0
       if (options == null) {
         options = {};
       }
-      methodName = options.as || MVCoffee.Pluralizer.pluralize(name);
+      if (options.as) {
+        methodName = options.as;
+      } else {
+        methodName = MVCoffee.Pluralizer.pluralize(name);
+        if (options.scope) {
+          methodName = options.scope + '_' + methodName;
+        }
+      }
       if (!this.prototype.hasOwnProperty("_associations_children")) {
         this.prototype._associations_children = [];
       }
@@ -1184,6 +1193,9 @@ Version 1.0.0
         if (modelStore != null) {
           constraints = {};
           constraints[foreignKey] = this.id;
+          if (options.scope) {
+            constraints[options.scope] = true;
+          }
           if (options.through) {
             joinTable = options.through;
             joins = modelStore.where(joinTable, constraints);

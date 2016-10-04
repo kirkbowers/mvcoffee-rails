@@ -35,7 +35,7 @@ class MvcoffeeJson < ActiveSupport::TestCase
       
       result = js.eval 'mvcoffee.mvcoffee_version'
       
-      assert_equal '1.0.0', result
+      assert_equal '1.1.0', result
     end
   
     should "set the redirect" do
