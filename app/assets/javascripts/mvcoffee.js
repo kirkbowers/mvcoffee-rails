@@ -394,6 +394,7 @@ Version 1.1.0
         scope = scope != null ? scope : this.opts.clientizeScope;
         $searchInside = jQuery(scope);
         applyClientize = function(selector, event, validation, submission) {
+          event += ".mvcoffee";
           return $searchInside.find(selector).each(function(index, element) {
             var customization, j, len1, ref, thisCustom;
             customization = {};
@@ -405,6 +406,7 @@ Version 1.1.0
               }
             }
             if (!customization.ignore) {
+              jQuery(element).off(event);
               return jQuery(element).on(event, function(eventObject) {
                 var callback, confirm, doPost;
                 callback = element.id;
