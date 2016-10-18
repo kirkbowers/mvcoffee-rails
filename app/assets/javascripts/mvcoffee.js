@@ -7,7 +7,7 @@ MVCoffee
 Copyright 2016, Kirk Bowers
 MIT License
 
-Version 1.1.0
+Version 1.1.1
  */
 
 (function() {
@@ -289,7 +289,6 @@ Version 1.1.0
           } else {
             error_callback_message = "errors";
           }
-          end;
           return this.broadcast(error_callback_message, this.errors);
         } else {
           return this.broadcast([callback_message, "render"]);
@@ -389,6 +388,11 @@ Version 1.1.0
       if (scope == null) {
         scope = null;
       }
+      jQuery("form input[type=submit]").off('click.mvcoffee');
+      jQuery("form input[type=submit]").on('click.mvcoffee', function() {
+        jQuery("input[type=submit]", jQuery(this).parents("form")).removeAttr("clicked");
+        return jQuery(this).attr("clicked", "true");
+      });
       if (typeof Turbolinks !== "undefined" && Turbolinks !== null) {
         self = this;
         scope = scope != null ? scope : this.opts.clientizeScope;
@@ -436,9 +440,23 @@ Version 1.1.0
           });
         };
         applyClientize("form", "submit", function(customization, callback) {
-          var method, model;
+          var button, method, model, skipValidation;
           model = customization.model;
           if (model != null) {
+            skipValidation = customization.skipValidation;
+            if (skipValidation) {
+              button = jQuery("input[type=submit][clicked=true]").attr('name');
+              console.log("button pressed = " + button);
+              if (Array.isArray(skipValidation)) {
+                if (skipValidation.includes(button)) {
+                  console.log("Skipping validation");
+                  return true;
+                }
+              } else if (button === skipValidation) {
+                console.log("Skipping validation");
+                return true;
+              }
+            }
             model.populate();
             method = "errors";
             if (callback) {
@@ -549,7 +567,7 @@ Version 1.1.0
     };
 
     Runtime.prototype.submit = function(submitee, callback_message) {
-      var element;
+      var button, element, submission;
       if (callback_message == null) {
         callback_message = "";
       }
@@ -558,7 +576,15 @@ Version 1.1.0
       if (submitee instanceof jQuery) {
         element = submitee.get(0);
       }
-      jQuery.post(element.action, jQuery(element).serialize(), (function(_this) {
+      submission = jQuery(element).serializeArray();
+      button = jQuery("input[type=submit][clicked=true]").attr('name');
+      if (button) {
+        submission.push({
+          name: button,
+          value: button
+        });
+      }
+      jQuery.post(element.action, jQuery.param(submission), (function(_this) {
         return function(data) {
           return _this.processServerData(data, callback_message);
         };
